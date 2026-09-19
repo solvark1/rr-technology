@@ -1,0 +1,46 @@
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: rr-mariadb
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dolidb
+      MYSQL_USER: dolibarr
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+
+  dolibarr:
+    image: dolibarr/dolibarr:24.0.0
+    container_name: rr-dolibarr
+    restart: unless-stopped
+
+    depends_on:
+      - mariadb
+
+    environment:
+      DOLI_DB_HOST: mariadb
+      DOLI_DB_NAME: dolidb
+      DOLI_DB_USER: dolibarr
+      DOLI_DB_PASSWORD: ${MYSQL_PASSWORD}
+
+      DOLI_ADMIN_LOGIN: admin
+      DOLI_ADMIN_PASSWORD: ${DOLI_ADMIN_PASSWORD}
+
+      DOLI_COMPANY_NAME: "R&R Technology"
+
+    ports:
+      - "8080:80"
+
+    volumes:
+      - dolibarr_documents:/var/www/documents
+      - ./dolibarr-custom:/var/www/html/custom
+
+
+volumes:
+  mariadb_data:
+  dolibarr_documents:
