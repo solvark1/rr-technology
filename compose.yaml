@@ -25,53 +25,55 @@ services:
 
     ports:
       - "8080:80"
+      - "8081:8081"
 
     environment:
-
-      # ==========================
-      # Base de datos
-      # ==========================
-
       DOLI_DB_HOST: mariadb
       DOLI_DB_NAME: dolidb
       DOLI_DB_USER: dolibarr
       DOLI_DB_PASSWORD: ${MYSQL_PASSWORD}
 
-      # ==========================
-      # Administrador
-      # ==========================
+      DOLI_URL_ROOT: "http://localhost:8080"
 
       DOLI_ADMIN_LOGIN: admin
       DOLI_ADMIN_PASSWORD: ${DOLI_ADMIN_PASSWORD}
 
-      # ==========================
-      # Empresa
-      # ==========================
-
       DOLI_COMPANY_NAME: "R&R Technology Costa Rica"
       DOLI_COMPANY_COUNTRYCODE: "CR"
 
-      DOLI_URL_ROOT: "http://localhost:8080"
+      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website,Categorie,Marketplace"
 
-      # ==========================
-      # Módulos
-      # ==========================
+      PHP_INI_UPLOAD_MAX_FILESIZE: 20M
+      PHP_INI_POST_MAX_SIZE: 25M
+      RR_MAIN_UPLOAD_DOC_KB: 25600
+      
+    command:
+      - /bin/sh
+      - -c
+      - |
+          if [ -f /var/www/html/conf/conf.php ]; then
+            sed -i '/dolibarr_website_allow_custom_php/d' /var/www/html/conf/conf.php
+            printf '%s\n' '$$dolibarr_website_allow_custom_php=2;' >> /var/www/html/conf/conf.php
+          fi
 
-      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website"
+          (
+            while [ ! -f /var/www/documents/website/marketplace/index.php ]; do
+              sleep 2
+            done
+
+            php -S 0.0.0.0:8081 \
+              -t /var/www/documents/website/marketplace \
+              >> /tmp/marketplace.log 2>&1
+          ) &
+
+          exec apache2-foreground
 
     volumes:
-
-      # Archivos/documentos generados por Dolibarr
       - dolibarr_documents:/var/www/documents
-
-      # Módulos desarrollados por nosotros
       - ./dolibarr-custom:/var/www/html/custom
+      - ./docker/init:/var/www/scripts/docker-init.d:ro
 
 
 volumes:
-
-  # Base de datos persistente
   mariadb_data:
-
-  # Documentos persistentes de Dolibarr
   dolibarr_documents:
