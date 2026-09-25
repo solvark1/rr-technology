@@ -1,0 +1,18 @@
+# Run ONLY with -p rr-renting-seed-test and the main compose.yaml.
+# This uses separate container names, no host ports, and project-scoped test volumes.
+services:
+  mariadb:
+    container_name: rr-renting-seed-test-db
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: renting-test-root-only
+      MYSQL_PASSWORD: renting-test-db-only
+  dolibarr:
+    container_name: rr-renting-seed-test-app
+    restart: "no"
+    ports: !reset []
+    environment:
+      DOLI_DB_PASSWORD: renting-test-db-only
+      DOLI_ADMIN_PASSWORD: renting-test-admin-only
+    volumes:
+      - ./docker/tests:/rr-seed-tests:ro

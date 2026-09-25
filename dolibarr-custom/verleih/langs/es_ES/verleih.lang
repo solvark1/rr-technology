@@ -1,0 +1,5 @@
+# Original Verleih: Copyright (C) 2026 Kim Wittkowski.
+# R&R Technology adaptation. GPL-3.0-or-later.
+Module501000Name=Renting
+Module501000Desc=Gestión de renting de equipos y componentes con clientes, contratos e inventario de Dolibarr
+VerleihMenuTop=Renting

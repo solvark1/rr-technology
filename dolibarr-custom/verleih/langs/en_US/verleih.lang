@@ -1,0 +1,134 @@
+# Copyright (C) 2026 Kim Wittkowski <kim@wittkowski-it.de>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+Module501000Name=Renting
+Module501000Desc=Renting de equipos y componentes
+
+VerleihMenuTop=Renting
+VerleihDashboard=Dashboard
+VerleihDashboardTitle=Lending overview
+VerleihDashboardItemsInStock=Items in stock
+VerleihDashboardItemsLoaned=Items loaned out
+VerleihDashboardItemsRepair=In repair/retired
+VerleihDashboardOpenLoans=Open loans
+VerleihDashboardStudents=Active students
+
+VerleihSchoolClasses=Classes
+VerleihSchoolClass=Class
+VerleihStudents=Students
+VerleihStudent=Student
+VerleihItemTypes=Item types
+VerleihItemType=Item type
+VerleihItems=Items
+VerleihItem=Item
+VerleihLoans=Loans
+VerleihLoan=Loan
+VerleihLabels=Labels
+
+VerleihSchoolYear=School year
+VerleihClassLabel=Label
+VerleihStudentNumber=Student number
+VerleihItemCategory=Category
+VerleihManufacturer=Manufacturer
+VerleihSerialNumber=Serial number
+VerleihInventoryNumber=Inventory number
+VerleihPurchaseDate=Purchase date
+VerleihItemConditionField=Condition
+VerleihConditionNew=New
+VerleihConditionGood=Good
+VerleihConditionUsable=Usable
+VerleihConditionReplace=Replace
+VerleihConditionBroken=Broken
+
+VerleihStatusInStock=In stock
+VerleihStatusLoaned=Loaned
+VerleihStatusRepair=In repair
+VerleihStatusRetired=Retired
+
+VerleihLoanStatusDraft=Draft
+VerleihLoanStatusActive=Active
+VerleihLoanStatusPartial=Partially returned
+VerleihLoanStatusClosed=Closed
+
+VerleihDateLoan=Checkout date
+VerleihDateReturnPlanned=Planned return date
+VerleihConditionOut=Condition at checkout
+VerleihConditionIn=Condition at return
+VerleihDateReturn=Return date
+VerleihLoanLines=Lines (item / student)
+VerleihBorrowedItems=Borrowed items
+VerleihLoanHistory=Loan history
+
+VerleihReports=Reports
+VerleihReportsIndexTitle=Reports
+VerleihReportsIndexDesc=Reports on loans and stock
+VerleihReportByStudent=Loans by student
+VerleihReportByStudentDesc=All items a given student has borrowed (current and past)
+VerleihReportByItemType=Distribution by item type
+VerleihReportByItemTypeDesc=All items of a type with their current holder (student/class)
+VerleihChooseStudentForReport=Please select a student
+VerleihAllItemTypes=All item types
+VerleihCurrentHolder=Current holder
+VerleihNotLoaned=Not loaned out
+VerleihExportCsv=CSV export
+VerleihBackToReports=Back to reports
+VerleihNoLinesYet=No lines yet
+VerleihAddLine=Add line
+VerleihChooseItem=Choose item
+VerleihChooseStudent=Choose student
+VerleihOnlyAvailableItemsShown=Only items currently in stock are shown
+VerleihPreselectItemTypeHelp=optional, filters the item picker on the next page
+VerleihFilteredByItemType=filtered by item type "%s"
+VerleihCheckout=Check out
+VerleihCheckin=Return
+VerleihReturnWizard=Return wizard
+VerleihConfirmCheckout=Check out all lines of this loan to the students now? Items will change to status "Loaned".
+VerleihConfirmCheckin=Process return for the selected lines now?
+VerleihLineReturned=Returned
+VerleihLineOpen=Open
+
+VerleihGenerateLabels=Generate labels
+VerleihSelectItemsForLabels=Select items for label printing
+VerleihLabelSettings=Label settings
+VerleihLabelColumns=Columns per sheet
+VerleihLabelRows=Rows per sheet
+VerleihNoItemsSelected=Please select at least one item
+
+ErrorLoanNotInDraft=This action is only possible while the loan is in "Draft" status
+ErrorItemNotFound=Item not found
+ErrorItemNotInStock=This item is not in stock and cannot be checked out
+ErrorItemAlreadyInOpenLoan=This item is already part of an open loan
+ErrorLoanHasNoLines=This loan has no lines yet
+ErrorUpdatingItem=Could not update the item's status
+
+VerleihScanTitle=Checkout by code
+VerleihScanButton=Checkout by code
+VerleihScanIntro=Select a student, then scan the item's barcode - the assignment happens automatically.
+VerleihScanCurrentStudent=Current student
+VerleihScanInputLabel=Scan barcode
+VerleihScanInputPlaceholder=Scan or type code...
+VerleihScanNoStudentSelected=Please select a student from the list first
+VerleihScanAllAssigned=All students of this class already have an item assigned
+VerleihScanNoClass=This loan has no class assigned - showing all active students
+VerleihScanItemNotFound=No item found with code "%s"
+VerleihScanSuccess=%s was assigned to %s
+VerleihScanAssigned=Already assigned
+VerleihScanBackToLoan=Back to loan
+VerleihScanStudentsInClass=Students of the class
+VerleihEnableCameraButton=Enable camera
+VerleihDisableCameraButton=Disable camera
+VerleihCameraNotSupported=This browser does not support camera access
+VerleihCameraPermissionDenied=Camera access was denied or is unavailable (requires HTTPS)
+VerleihCameraLibraryError=Could not load the scanner library (check internet connection)
+VerleihCameraInitializing=Initializing camera...
+VerleihCameraActive=Camera active - hold the barcode inside the frame
+VerleihCameraDetected=Code detected
+
+VerleihSetupPage=Verleih - Setup
+VerleihSetupDesc=Basic settings for the Verleih module, in particular for label printing.
+VerleihBackToSetup=Back to Verleih setup
+VerleihExtrafieldsTitle=Extra fields
+VerleihExtrafieldsDesc=Define custom extra fields per object here (e.g. "Color" for items, "Homeroom teacher" for classes), without any code change.

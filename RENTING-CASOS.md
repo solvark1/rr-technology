@@ -1,0 +1,11 @@
+| Caso | ¿Qué hace actualmente el sistema? | ¿Qué queda manual o pendiente? |
+|---|---|---|
+| **Cancela a los 3 meses un renting de 6** | Permite recibir el equipo antes. Cuando todos los equipos se devuelven, el renting queda **Finalizado**. | Cerrar el contrato y **suspender la plantilla recurrente**. La devolución no detiene las facturas automáticamente. No calcula penalizaciones ni reembolsos. |
+| **Devuelve una de dos máquinas** | Registra esa devolución individual y deja el renting en **Devolución parcial**. La otra máquina sigue entregada al cliente. | Decidir si cambia el importe y ajustar la facturación. No reduce automáticamente la mensualidad. |
+| **Devuelve una máquina dañada** | Permite registrar la condición **Dañado** y enviarla a **Revisión**, luego a **Reparación**. No queda disponible inmediatamente para otro alquiler. | Diagnóstico, costo de reparación y eventual cargo al cliente. |
+| **Necesita una máquina de reemplazo** | Podés gestionar otro equipo mediante un nuevo renting asociado al contrato. | No existe una operación específica de **sustitución** que intercambie equipos dentro del renting original. |
+| **Cancela antes de la entrega** | Permite cancelar la reserva y libera los equipos para otras reservas. | Si ya preparaste facturación, revisarla y suspenderla por separado. |
+| **Dos clientes quieren el mismo equipo en fechas coincidentes** | Bloquea reservas que se superponen para ese equipo. | Ya está contemplado. |
+| **No devuelve el equipo a tiempo** | El equipo sigue entregado; una devolución vencida impide nuevas reservas sobre él. | No calcula recargos ni amplía automáticamente el contrato o la facturación. |
+| **Quiere extender el alquiler** | No hay una función específica de renovación del renting. | Gestionar la extensión y revisar disponibilidad y calendario de cobro. |
+| **No paga una mensualidad** | Dolibarr permite mantener la factura pendiente y registrar pagos parciales. | El renting no bloquea automáticamente al cliente ni inicia una recuperación del equipo. |

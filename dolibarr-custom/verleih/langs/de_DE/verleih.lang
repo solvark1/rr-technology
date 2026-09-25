@@ -1,0 +1,134 @@
+# Copyright (C) 2026 Kim Wittkowski <kim@wittkowski-it.de>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+Module501000Name=Renting
+Module501000Desc=Renting de equipos y componentes
+
+VerleihMenuTop=Renting
+VerleihDashboard=Übersicht
+VerleihDashboardTitle=Verleih-Übersicht
+VerleihDashboardItemsInStock=Exemplare im Lager
+VerleihDashboardItemsLoaned=Ausgegebene Exemplare
+VerleihDashboardItemsRepair=In Reparatur/ausgemustert
+VerleihDashboardOpenLoans=Offene Ausleihen
+VerleihDashboardStudents=Aktive Schüler
+
+VerleihSchoolClasses=Klassen
+VerleihSchoolClass=Klasse
+VerleihStudents=Schüler
+VerleihStudent=Schüler
+VerleihItemTypes=Objekttypen
+VerleihItemType=Objekttyp
+VerleihItems=Exemplare
+VerleihItem=Exemplar
+VerleihLoans=Ausleihen
+VerleihLoan=Ausleihe
+VerleihLabels=Etiketten
+
+VerleihSchoolYear=Schuljahr
+VerleihClassLabel=Bezeichnung
+VerleihStudentNumber=Schülernummer
+VerleihItemCategory=Kategorie
+VerleihManufacturer=Hersteller
+VerleihSerialNumber=Seriennummer
+VerleihInventoryNumber=Inventarnummer
+VerleihPurchaseDate=Anschaffungsdatum
+VerleihItemConditionField=Zustand
+VerleihConditionNew=Neu
+VerleihConditionGood=Gut
+VerleihConditionUsable=Nutzbar
+VerleihConditionReplace=Austausch
+VerleihConditionBroken=Defekt
+
+VerleihStatusInStock=Im Lager
+VerleihStatusLoaned=Ausgegeben
+VerleihStatusRepair=In Reparatur
+VerleihStatusRetired=Ausgemustert
+
+VerleihLoanStatusDraft=Entwurf
+VerleihLoanStatusActive=Aktiv
+VerleihLoanStatusPartial=Teilweise zurück
+VerleihLoanStatusClosed=Abgeschlossen
+
+VerleihDateLoan=Ausgabedatum
+VerleihDateReturnPlanned=Geplante Rückgabe
+VerleihConditionOut=Zustand bei Ausgabe
+VerleihConditionIn=Zustand bei Rückgabe
+VerleihDateReturn=Rückgabedatum
+VerleihLoanLines=Positionen (Exemplar / Schüler)
+VerleihBorrowedItems=Ausgeliehene Objekte
+VerleihLoanHistory=Ausleihhistorie
+
+VerleihReports=Listen
+VerleihReportsIndexTitle=Listen
+VerleihReportsIndexDesc=Auswertungen über Ausleihen und Bestand
+VerleihReportByStudent=Ausleihen je Schüler
+VerleihReportByStudentDesc=Alle Objekte, die ein bestimmter Schüler ausgeliehen hat (aktuell und in der Vergangenheit)
+VerleihReportByItemType=Verteilung nach Objekttyp
+VerleihReportByItemTypeDesc=Alle Exemplare eines Objekttyps mit aktuellem Inhaber (Schüler/Klasse)
+VerleihChooseStudentForReport=Bitte Schüler auswählen
+VerleihAllItemTypes=Alle Objekttypen
+VerleihCurrentHolder=Aktueller Inhaber
+VerleihNotLoaned=Nicht ausgeliehen
+VerleihExportCsv=CSV-Export
+VerleihBackToReports=Zurück zu den Listen
+VerleihNoLinesYet=Noch keine Positionen erfasst
+VerleihAddLine=Position hinzufügen
+VerleihChooseItem=Exemplar wählen
+VerleihChooseStudent=Schüler wählen
+VerleihOnlyAvailableItemsShown=Es werden nur Exemplare angezeigt, die aktuell im Lager sind
+VerleihPreselectItemTypeHelp=optional, filtert die Exemplar-Auswahl auf der nächsten Seite
+VerleihFilteredByItemType=gefiltert nach Objekttyp "%s"
+VerleihCheckout=Ausgeben
+VerleihCheckin=Rücknahme
+VerleihReturnWizard=Rücknahme-Assistent
+VerleihConfirmCheckout=Alle Positionen dieser Ausleihe jetzt an die Schüler ausgeben? Die Exemplare wechseln danach in den Status "Ausgegeben".
+VerleihConfirmCheckin=Rücknahme für die ausgewählten Positionen jetzt verbuchen?
+VerleihLineReturned=Zurückgenommen
+VerleihLineOpen=Offen
+
+VerleihGenerateLabels=Etiketten erzeugen
+VerleihSelectItemsForLabels=Exemplare für den Etikettendruck auswählen
+VerleihLabelSettings=Etiketten-Einstellungen
+VerleihLabelColumns=Spalten je Blatt
+VerleihLabelRows=Zeilen je Blatt
+VerleihNoItemsSelected=Bitte mindestens ein Exemplar auswählen
+
+ErrorLoanNotInDraft=Diese Aktion ist nur bei einer Ausleihe im Status "Entwurf" möglich
+ErrorItemNotFound=Exemplar wurde nicht gefunden
+ErrorItemNotInStock=Dieses Exemplar ist nicht im Lager und kann nicht ausgegeben werden
+ErrorItemAlreadyInOpenLoan=Dieses Exemplar ist bereits einer offenen Ausleihe zugeordnet
+ErrorLoanHasNoLines=Diese Ausleihe hat noch keine Positionen
+ErrorUpdatingItem=Der Status des Exemplars konnte nicht aktualisiert werden
+
+VerleihScanTitle=Ausleihen mit Code
+VerleihScanButton=Ausleihen mit Code
+VerleihScanIntro=Schüler auswählen, dann Barcode des Exemplars scannen - die Zuordnung erfolgt automatisch.
+VerleihScanCurrentStudent=Aktueller Schüler
+VerleihScanInputLabel=Barcode scannen
+VerleihScanInputPlaceholder=Code scannen oder eingeben...
+VerleihScanNoStudentSelected=Bitte zuerst einen Schüler aus der Liste wählen
+VerleihScanAllAssigned=Allen Schülern dieser Klasse wurde bereits ein Exemplar zugeordnet
+VerleihScanNoClass=Dieser Ausleihe ist keine Klasse zugeordnet - es werden alle aktiven Schüler angezeigt
+VerleihScanItemNotFound=Kein Exemplar mit dem Code "%s" gefunden
+VerleihScanSuccess=%s wurde %s zugeordnet
+VerleihScanAssigned=Bereits zugeordnet
+VerleihScanBackToLoan=Zurück zur Ausleihe
+VerleihScanStudentsInClass=Schüler der Klasse
+VerleihEnableCameraButton=Kamera aktivieren
+VerleihDisableCameraButton=Kamera deaktivieren
+VerleihCameraNotSupported=Dieser Browser unterstützt keinen Kamerazugriff
+VerleihCameraPermissionDenied=Kamerazugriff wurde verweigert oder ist nicht möglich (benötigt HTTPS)
+VerleihCameraLibraryError=Scanner-Bibliothek konnte nicht geladen werden (Internetverbindung prüfen)
+VerleihCameraInitializing=Kamera wird initialisiert...
+VerleihCameraActive=Kamera aktiv - Barcode in den Rahmen halten
+VerleihCameraDetected=Code erkannt
+
+VerleihSetupPage=Verleih - Einstellungen
+VerleihSetupDesc=Grundeinstellungen für das Verleih-Modul, insbesondere für den Etikettendruck.
+VerleihBackToSetup=Zurück zu den Verleih-Einstellungen
+VerleihExtrafieldsTitle=Zusatzfelder
+VerleihExtrafieldsDesc=Hier können je Objekt eigene Zusatzfelder definiert werden (z. B. "Farbe" bei Exemplaren, "Klassenlehrer" bei Klassen), ohne Code-Änderung.

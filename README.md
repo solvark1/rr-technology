@@ -92,3 +92,8 @@ docker compose down -v
 ```
 
 salvo que se desee eliminar también los volúmenes del proyecto, ya que esto puede borrar los datos almacenados en MariaDB.
+
+
+## Renting
+
+Consulta [la guía de configuración y primera prueba](RENTING-GUIA.md) para separar ventas y renting y utilizar el módulo personalizado.

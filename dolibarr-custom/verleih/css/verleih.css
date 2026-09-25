@@ -1,0 +1,127 @@
+/* Copyright (C) 2026 Kim Wittkowski <kim@wittkowski-it.de>
+ * Verleih - modernes, kachelbasiertes UI (optionale Zweitansicht neben der
+ * klassischen Dolibarr-Listenansicht). Theme-fähig (hell/dunkel).
+ * Adaptiert aus custom/protoflow/css/protoflow.css (gleiches Design-System,
+ * Präfix "pf-" -> "vl-", plus Verleih-spezifische Status-/Zustands-Chips).
+ */
+
+:root {
+	--vl-surface: #ffffff;
+	--vl-surface-2: #f4f6f9;
+	--vl-border: #e2e6ec;
+	--vl-text: #1f2733;
+	--vl-text-muted: #6b7686;
+	--vl-accent: #2b7de9;
+	--vl-accent-soft: #e7f0fd;
+	--vl-ok: #1a9d5a;
+	--vl-ok-soft: #e3f6ec;
+	--vl-warn: #d98a00;
+	--vl-warn-soft: #fbf1dc;
+	--vl-danger: #d9432f;
+	--vl-danger-soft: #fbe6e3;
+	--vl-lock: #97a1b0;
+	--vl-shadow: 0 1px 3px rgba(20,30,50,.08), 0 2px 8px rgba(20,30,50,.06);
+	--vl-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--vl-surface: #1e2530;
+		--vl-surface-2: #171d26;
+		--vl-border: #313b49;
+		--vl-text: #e7ecf3;
+		--vl-text-muted: #97a1b0;
+		--vl-accent: #4f97f2;
+		--vl-accent-soft: #1b2c44;
+		--vl-ok: #33b978;
+		--vl-ok-soft: #14301f;
+		--vl-warn: #e0a13a;
+		--vl-warn-soft: #33290f;
+		--vl-danger: #e2564a;
+		--vl-danger-soft: #3a1a17;
+		--vl-lock: #5c6675;
+		--vl-shadow: 0 1px 3px rgba(0,0,0,.35), 0 2px 10px rgba(0,0,0,.25);
+	}
+}
+
+/* ---- Toolbar (Suchleiste + Ansichts-Umschalter + "Neu"-Button) ---- */
+.vl-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:8px 0 16px; }
+.vl-toolbar .vl-spacer { flex:1 1 auto; }
+.vl-viewtoggle { display:inline-flex; gap:6px; }
+.vl-viewtoggle a { opacity:.55; }
+.vl-viewtoggle a.vl-active { opacity:1; }
+
+/* ---- Kachel-Raster (Listenansicht als Karten) ---- */
+.vl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin-bottom:16px; }
+.vl-card {
+	background:var(--vl-surface); color:var(--vl-text);
+	border:1px solid var(--vl-border); border-radius:var(--vl-radius);
+	box-shadow:var(--vl-shadow); padding:16px; transition:transform .12s ease, box-shadow .12s ease;
+}
+.vl-card:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(20,30,50,.12); }
+.vl-card h3 { margin:0 0 6px; font-size:1.02rem; font-weight:600; }
+.vl-card h3 a { color:inherit; text-decoration:none; }
+.vl-card h3 a:hover { color:var(--vl-accent); }
+.vl-card .vl-sub { color:var(--vl-text-muted); font-size:.86rem; }
+.vl-card .vl-body { margin-top:10px; display:flex; flex-direction:column; gap:4px; font-size:.86rem; }
+.vl-card .vl-body .vl-row { display:flex; justify-content:space-between; gap:8px; }
+.vl-card .vl-row .vl-label { color:var(--vl-text-muted); }
+.vl-card .vl-chips { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+.vl-card .vl-actions { margin-top:12px; display:flex; gap:8px; }
+
+/* ---- Chips / Badges ---- */
+.vl-chip {
+	display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:999px;
+	font-size:.76rem; font-weight:600; line-height:1.6; background:var(--vl-surface-2); color:var(--vl-text-muted);
+	border:1px solid var(--vl-border); white-space:nowrap;
+}
+.vl-chip.vl-accent { background:var(--vl-accent-soft); color:var(--vl-accent); border-color:transparent; }
+.vl-chip.vl-ok { background:var(--vl-ok-soft); color:var(--vl-ok); border-color:transparent; }
+.vl-chip.vl-warn { background:var(--vl-warn-soft); color:var(--vl-warn); border-color:transparent; }
+.vl-chip.vl-danger { background:var(--vl-danger-soft); color:var(--vl-danger); border-color:transparent; }
+.vl-chip.vl-muted { opacity:.85; }
+
+/* Fachliche Zuordnung (siehe css_changes.md fuer die Zuordnungstabelle):
+   Zustand:  neu/gut -> vl-ok, nutzbar -> vl-accent, austausch -> vl-warn, defekt -> vl-danger
+   Status Exemplar: im_lager -> vl-ok, ausgegeben -> vl-accent, in_reparatur -> vl-warn, ausgemustert -> vl-muted
+   Status Ausleihe: entwurf -> vl-muted, aktiv -> vl-accent, teilweise -> vl-warn, abgeschlossen -> vl-ok */
+
+/* ---- Buttons im Verleih-Stil (ergaenzt Dolibarr-Buttons, ersetzt sie nicht) ---- */
+.vl-btn {
+	display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1px solid var(--vl-border);
+	background:var(--vl-surface); color:var(--vl-text); padding:7px 14px; border-radius:9px; font-size:.88rem; font-weight:600;
+	text-decoration:none; transition:background .12s ease, border-color .12s ease;
+}
+.vl-btn:hover { border-color:var(--vl-accent); color:var(--vl-accent); }
+.vl-btn.vl-primary { background:var(--vl-accent); border-color:var(--vl-accent); color:#fff; }
+.vl-btn.vl-primary:hover { filter:brightness(1.05); color:#fff; }
+.vl-btn.vl-danger { background:var(--vl-danger); border-color:var(--vl-danger); color:#fff; }
+.vl-btn:disabled, .vl-btn.vl-disabled { opacity:.5; cursor:not-allowed; }
+
+/* ---- Kennzahlen-Kacheln (Dashboard) ---- */
+.vl-stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:16px; }
+.vl-stat {
+	background:var(--vl-surface); border:1px solid var(--vl-border); border-radius:var(--vl-radius);
+	box-shadow:var(--vl-shadow); padding:16px; display:flex; flex-direction:column; gap:4px;
+}
+.vl-stat .vl-stat-value { font-size:1.8rem; font-weight:700; color:var(--vl-text); }
+.vl-stat .vl-stat-label { color:var(--vl-text-muted); font-size:.86rem; }
+.vl-stat a { text-decoration:none; color:inherit; }
+
+.vl-empty { color:var(--vl-text-muted); padding:20px; text-align:center; }
+
+/* ---- Kamera-Barcode-Scanner (loan_scan.php, js/verleih-scan.js) ---- */
+.vl-camera-container {
+	position:relative; width:100%; max-width:640px; min-height:320px; margin:14px 0;
+	background:#000; border-radius:var(--vl-radius); overflow:hidden;
+}
+.vl-camera-container canvas, .vl-camera-container video { width:100% !important; height:auto !important; display:block !important; }
+.vl-camera-overlay {
+	position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+	width:80%; height:55%; border:3px solid var(--vl-ok); border-radius:8px;
+	box-shadow:0 0 0 9999px rgba(0,0,0,.5); pointer-events:none;
+}
+.vl-scan-status { margin-top:8px; font-weight:600; }
+.vl-scan-status-success { color:var(--vl-ok); }
+.vl-scan-status-error { color:var(--vl-danger); }
+.vl-scan-status-info { color:var(--vl-text-muted); }

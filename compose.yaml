@@ -41,16 +41,37 @@ services:
       DOLI_COMPANY_NAME: "R&R Technology Costa Rica"
       DOLI_COMPANY_COUNTRYCODE: "CR"
 
-      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website,Categorie,Marketplace"
+      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website,Categorie,Marketplace,Verleih"
 
       PHP_INI_UPLOAD_MAX_FILESIZE: 20M
       PHP_INI_POST_MAX_SIZE: 25M
       RR_MAIN_UPLOAD_DOC_KB: 25600
+      RR_THEME_DARK_MODE: 2 # 0: claro, 1: segun navegador, 2: siempre oscuro
+      RR_CURRENCY: "CRC" # Colon costarricense; se aplica antes de los seeders
+      RR_RENTING_DEMO_SEED: "1" # 0 desactiva los datos de ejemplo
+      RR_RECURRING_BILLING: "1" # Plantillas recurrentes en borrador; revision cada minuto
       
     command:
       - /bin/sh
       - -c
       - |
+          php /var/www/scripts/rr-start/20-enable-verleih.php || exit 1
+          php /var/www/scripts/rr-start/25-configure-currency.php || exit 1
+          php /var/www/scripts/rr-start/26-configure-cr-vat.php || exit 1
+          php /var/www/scripts/rr-start/30-configure-theme.php || exit 1
+          php /var/www/scripts/rr-start/40-seed-renting-demo.php || exit 1
+          php /var/www/scripts/rr-start/45-seed-bank-demo.php || exit 1
+
+          if [ "$$RR_RECURRING_BILLING" = "1" ]; then
+            (
+              echo '[RR-BILLING] Automatic draft billing enabled (60 seconds).'
+              while :; do
+                runuser -u www-data -- php /var/www/scripts/rr-start/50-recurring-billing.php || echo '[RR-BILLING] Failed; retrying in 60 seconds.' >&2
+                sleep 60
+              done
+            ) &
+          fi
+
           if [ -f /var/www/html/conf/conf.php ]; then
             sed -i '/dolibarr_website_allow_custom_php/d' /var/www/html/conf/conf.php
             printf '%s\n' '$$dolibarr_website_allow_custom_php=2;' >> /var/www/html/conf/conf.php
@@ -72,6 +93,7 @@ services:
       - dolibarr_documents:/var/www/documents
       - ./dolibarr-custom:/var/www/html/custom
       - ./docker/init:/var/www/scripts/docker-init.d:ro
+      - ./docker/start:/var/www/scripts/rr-start:ro
 
 
 volumes:
