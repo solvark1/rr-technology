@@ -60,6 +60,7 @@ services:
           php /var/www/scripts/rr-start/26-configure-cr-vat.php || exit 1
           php /var/www/scripts/rr-start/30-configure-theme.php || exit 1
           php /var/www/scripts/rr-start/40-seed-renting-demo.php || exit 1
+          runuser -u www-data -- php /var/www/scripts/rr-start/42-seed-product-images.php || exit 1
           php /var/www/scripts/rr-start/45-seed-bank-demo.php || exit 1
 
           if [ "$$RR_RECURRING_BILLING" = "1" ]; then
@@ -94,6 +95,7 @@ services:
       - ./dolibarr-custom:/var/www/html/custom
       - ./docker/init:/var/www/scripts/docker-init.d:ro
       - ./docker/start:/var/www/scripts/rr-start:ro
+      - ./docker/seed-assets/products:/var/www/rr-seed-products:ro
 
 
 volumes:

@@ -14,6 +14,8 @@ La empresa combina venta de hardware y alquiler de equipos para empresas de eSpo
 
 ## 1. Comparación general: limitación, consecuencia y mejora
 
+**Actualización de implementación posterior a la comparación original:** la integración de facturación descrita abajo como propuesta ya dispone de creación de plantilla desde el renting, protección contra duplicados del vínculo, visualización de facturas, activación con entrega y pausa por devolución. Permite ajustar a las unidades restantes y reanudar futuras mensualidades con confirmación. La explicación detallada y vigente está en [FACTURACION-RENTING.md](FACTURACION-RENTING.md). Los párrafos de propuesta de este documento conservan el planteamiento original; ya no representan por sí solos la lista de pendientes. Siguen fuera los prorrateos, reembolsos y migración de plantillas antiguas. La sustitución de equipos del mismo producto y la pantalla técnica ya están implementadas; consulta SUSTITUCIONES-Y-REPARACIONES.md.
+
 | Proceso | Antes: limitación y consecuencia para el negocio | Después actual: qué resolvemos | Después propuesto / pendiente | Estado |
 |---|---|---|---|---|
 | Gestión operativa del renting | El contrato y el stock no reunían en un mismo flujo la unidad alquilada, sus fechas de ocupación y su devolución. El operador debía cruzar esos datos, con riesgo de comprometer la misma máquina en periodos coincidentes o perder el seguimiento de devoluciones parciales. | Un renting reúne cliente, contrato, servicio y series. El sistema rechaza reservas solapadas y registra la entrega y devolución de cada unidad, permitiendo conocer cuáles siguen con el cliente. | Sustitución dentro del renting, renovación, penalizaciones y cierre coordinado con contrato y facturación. | Implementado para el circuito básico; excepciones parcialmente cubiertas. |
@@ -167,7 +169,7 @@ Cancelación anticipada o cambio de servicio → revisar fecha efectiva y mensua
 | Devolución anticipada completa | El renting finaliza al recibir todos los equipos. | Cerrar contrato y suspender plantilla según el acuerdo. |
 | Devolución parcial | El renting mantiene los demás equipos entregados. | Ajustar facturación si el cambio lo requiere. |
 | Equipo dañado | Condición registrada, revisión y destino reparación. | Diagnóstico, costos, responsabilidad y posibles cargos. |
-| Sustitución de equipo | Puede gestionarse otro renting asociado al contrato. | Operación específica de sustitución en el renting original. |
+| Sustitución de equipo | Incidencia e intercambio de series del mismo producto dentro del renting original; original a revisión y sustituto al cliente, sin cambiar facturación. | Modelos diferentes, costos de reparación e intercambio en momentos separados. |
 | Equipo con devolución vencida | Sigue entregado y bloquea nuevas reservas sobre él. | Recargos, extensión y gestión de recuperación. |
 | Impago | La factura mantiene su saldo pendiente; Dolibarr permite registrar pagos. | Políticas de suspensión del servicio o recuperación; no se ejecutan desde Renting. |
 

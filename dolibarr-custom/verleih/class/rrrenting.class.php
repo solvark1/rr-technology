@@ -86,6 +86,16 @@ class RrRenting
     public function asset($id, $lock = false) {
         return $this->one("SELECT * FROM ".$this->table('asset')." WHERE rowid=".(int)$id." AND entity=".$this->entity.($lock ? " FOR UPDATE" : ""));
     }
+    public function fleet($category=0) {
+        $p=$this->db->prefix(); $where='';
+        if($category>0) {
+            $this->one('SELECT rowid FROM '.$p.'categorie WHERE rowid='.(int)$category.' AND entity='.$this->entity.' AND type=0');
+            $where=' AND EXISTS (SELECT 1 FROM '.$p.'categorie_product cp WHERE cp.fk_product=a.fk_product AND cp.fk_categorie='.(int)$category.')';
+        } elseif($category===-1) {
+            $where=' AND NOT EXISTS (SELECT 1 FROM '.$p.'categorie_product cp JOIN '.$p.'categorie c ON c.rowid=cp.fk_categorie WHERE cp.fk_product=a.fk_product AND c.entity='.$this->entity.' AND c.type=0)';
+        }
+        return $this->rows('SELECT a.*,p.label FROM '.$this->table('asset').' a JOIN '.$p.'product p ON p.rowid=a.fk_product WHERE a.entity='.$this->entity.$where.' ORDER BY a.rowid DESC LIMIT 500');
+    }
     public function booking($id, $lock=false) {
         return $this->one("SELECT * FROM ".$this->table('booking')." WHERE rowid=".(int)$id." AND entity=".$this->entity.($lock ? " FOR UPDATE" : ""));
     }
@@ -214,6 +224,12 @@ class RrRenting
                 $this->event('checkout',$a->rowid,$id);
             }
             $this->query("UPDATE ".$this->table('booking')." SET status='active' WHERE rowid=".(int)$id);
+            $waiting=$this->rows('SELECT fk_template FROM '.$this->table('billing')." WHERE fk_booking=".(int)$id." AND state='waiting'");
+            if($waiting) {
+                $this->query('UPDATE '.$this->db->prefix().'facture_rec SET suspended=0 WHERE rowid='.(int)$waiting[0]->fk_template.' AND entity='.$this->entity);
+                $this->query('UPDATE '.$this->table('billing')." SET state='running' WHERE fk_booking=".(int)$id);
+                $this->event('billing_start',0,$id,'Programación activada con la entrega.');
+            }
         });
     }
     public function cancel($id) {
@@ -222,12 +238,120 @@ class RrRenting
             $this->config(true); $b=$this->booking($id,true);
             if ($b->status!=='reserved') { throw new RuntimeException('Solo se pueden cancelar reservas sin entregar.'); }
             $this->query("UPDATE ".$this->table('booking')." SET status='cancelled' WHERE rowid=".(int)$id);
+            $this->pauseBilling($id,'Reserva cancelada.');
             $this->event('cancel',0,$id);
         });
     }
-    public function receive($id, $lineid, $condition) {
+    public function reportIncident($id,$lineid,$reason) {
         $this->permission('ausgeben');
-        if (!in_array($condition,array('good','worn','damaged'),true)) { throw new RuntimeException('Condición de devolución inválida.'); }
+        if(trim($reason)==='' || mb_strlen($reason)>255) throw new RuntimeException('Describí la falla en un máximo de 255 caracteres.');
+        return $this->atomic(function()use($id,$lineid,$reason){
+            $b=$this->booking($id,true);
+            if(!in_array($b->status,array('active','partial'),true)) throw new RuntimeException('La incidencia requiere un renting en curso.');
+            $line=$this->one('SELECT * FROM '.$this->table('line').' WHERE rowid='.(int)$lineid.' AND fk_booking='.(int)$id.' FOR UPDATE');
+            if(!$line->date_out || $line->date_return) throw new RuntimeException('El equipo ya no está entregado al cliente.');
+            if($this->rows('SELECT rowid FROM '.$this->table('incident').' WHERE fk_line='.(int)$lineid." AND status='open'")) throw new RuntimeException('Esta unidad ya tiene una incidencia abierta.');
+            $this->query('INSERT INTO '.$this->table('incident').' (entity,fk_booking,fk_line,reason,fk_user,date_creation) VALUES ('.$this->entity.','.(int)$id.','.(int)$lineid.','.$this->quote(trim($reason)).','.(int)$this->user->id.','.$this->quote($this->db->idate(dol_now())).')');
+            $incident=$this->db->last_insert_id($this->table('incident'));
+            $this->event('incident',$line->fk_asset,$id,$reason);
+            return $incident;
+        });
+    }
+    public function receiveIncident($id,$lineid,$reason) {
+        $this->permission('ausgeben');
+        return $this->atomic(function()use($id,$lineid,$reason){
+            $c=$this->config(true); $b=$this->booking($id,true);
+            if(!in_array($b->status,array('active','partial'),true)) throw new RuntimeException('El renting no está en curso.');
+            $line=$this->one('SELECT * FROM '.$this->table('line').' WHERE rowid='.(int)$lineid.' AND fk_booking='.(int)$id.' FOR UPDATE');
+            if(!$line->date_out || $line->date_return) throw new RuntimeException('El equipo ya fue recibido.');
+            $incidents=$this->rows('SELECT rowid FROM '.$this->table('incident').' WHERE fk_booking='.(int)$id.' AND fk_line='.(int)$lineid." AND status='open' AND entity=".$this->entity);
+            $incident=$incidents ? $incidents[0]->rowid : $this->reportIncident($id,$lineid,$reason);
+            $a=$this->asset($line->fk_asset,true);
+            if($a->status!=='out' || (int)$a->fk_warehouse!==(int)$c->customer) throw new RuntimeException('El equipo no figura en poder del cliente.');
+            $this->transfer($a->fk_product,$a->serial,$c->customer,$c->review,'Renting: recepción por incidencia '.$b->ref);
+            $this->query("UPDATE ".$this->table('asset')." SET status='review',item_condition='pending',fk_warehouse=".(int)$c->review.' WHERE rowid='.(int)$a->rowid);
+            $this->query('UPDATE '.$this->table('line')." SET date_return=".$this->quote($this->db->idate(dol_now())).",condition_in='pending' WHERE rowid=".(int)$lineid);
+            $this->query('UPDATE '.$this->table('incident')." SET status='received' WHERE rowid=".(int)$incident);
+            $this->event('incident_receive',$a->rowid,$id,'Recibido para revisión; entrega pendiente. Facturación sin cambios.');
+            return $incident;
+        });
+    }
+    public function finishIncident($id,$incidentId,$reason) {
+        $this->permission('ausgeben');
+        if(trim($reason)==='' || mb_strlen($reason)>255) throw new RuntimeException('Indicá el motivo de la devolución definitiva.');
+        return $this->atomic(function()use($id,$incidentId,$reason){
+            $b=$this->booking($id,true);
+            $i=$this->one('SELECT * FROM '.$this->table('incident').' WHERE rowid='.(int)$incidentId.' AND fk_booking='.(int)$id.' AND entity='.$this->entity.' FOR UPDATE');
+            if($i->status!=='received' || !in_array($b->status,array('active','partial'),true)) throw new RuntimeException('No hay una entrega pendiente que finalizar.');
+            $this->query('UPDATE '.$this->table('incident')." SET status='returned',resolution=".$this->quote($reason).',date_resolution='.$this->quote($this->db->idate(dol_now())).' WHERE rowid='.(int)$incidentId);
+            $this->updateReturnStatus($id);
+            $this->pauseBilling($id,'Devolución definitiva: '.$reason);
+            $this->event('incident_finish',0,$id,$reason);
+        });
+    }
+    private function updateReturnStatus($id) {
+        $pending=$this->one('SELECT COUNT(*) qty FROM '.$this->table('line').' WHERE fk_booking='.(int)$id.' AND date_return IS NULL');
+        $waiting=$this->one('SELECT COUNT(*) qty FROM '.$this->table('incident').' WHERE fk_booking='.(int)$id." AND status='received' AND entity=".$this->entity);
+        $this->query('UPDATE '.$this->table('booking').' SET status='.$this->quote(($pending->qty || $waiting->qty)?'partial':'closed').' WHERE rowid='.(int)$id);
+    }
+    public function replacementCandidates($id,$lineid) {
+        $b=$this->booking($id); $c=$this->config();
+        $line=$this->one('SELECT a.fk_product FROM '.$this->table('line').' l JOIN '.$this->table('asset').' a ON a.rowid=l.fk_asset WHERE l.rowid='.(int)$lineid.' AND l.fk_booking='.(int)$id.' AND a.entity='.$this->entity);
+        $today=dol_print_date(dol_now(),'%Y-%m-%d');
+        return $this->rows('SELECT a.rowid,a.serial AS label FROM '.$this->table('asset').' a WHERE a.entity='.$this->entity.' AND a.fk_product='.(int)$line->fk_product." AND a.status='available' AND a.item_condition IN ('good','worn') AND a.fk_warehouse=".(int)$c->available.
+            ' AND NOT EXISTS (SELECT 1 FROM '.$this->table('line').' l JOIN '.$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=a.rowid AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL AND ((b.date_start<=".$this->quote($b->date_end).' AND b.date_end>='.$this->quote($today).') OR l.date_out IS NOT NULL)) ORDER BY a.serial');
+    }
+    public function replaceEquipment($id,$incidentId,$replacement,$note) {
+        $this->permission('ausgeben');
+        if(trim($note)==='' || mb_strlen($note)>255) throw new RuntimeException('Indicá la justificación del cambio (máximo 255 caracteres).');
+        return $this->atomic(function()use($id,$incidentId,$replacement,$note){
+            $c=$this->config(true); $b=$this->booking($id,true);
+            $today=dol_print_date(dol_now(),'%Y-%m-%d');
+            if(!in_array($b->status,array('active','partial'),true) || $b->date_end<$today) throw new RuntimeException('Solo se sustituye equipo en un renting vigente y entregado.');
+            $incident=$this->one('SELECT * FROM '.$this->table('incident').' WHERE rowid='.(int)$incidentId.' AND fk_booking='.(int)$id.' AND entity='.$this->entity.' FOR UPDATE');
+            if(!in_array($incident->status,array('open','received'),true)) throw new RuntimeException('La incidencia ya fue atendida.');
+            $line=$this->one('SELECT * FROM '.$this->table('line').' WHERE rowid='.(int)$incident->fk_line.' AND fk_booking='.(int)$id.' FOR UPDATE');
+            if(!$line->date_out || ($incident->status==='open' && $line->date_return) || ($incident->status==='received' && !$line->date_return)) throw new RuntimeException('La recepción no coincide con la incidencia.');
+            $old=$this->asset($line->fk_asset,true); $new=$this->asset($replacement,true);
+            if($incident->status==='open' && ($old->status!=='out' || (int)$old->fk_warehouse!==(int)$c->customer)) throw new RuntimeException('El equipo original no figura en poder del cliente.');
+            $candidates=$this->replacementCandidates($id,$line->rowid);
+            if(!in_array((int)$replacement,array_map(function($a){return (int)$a->rowid;},$candidates),true)) throw new RuntimeException('El reemplazo debe ser del mismo producto y estar disponible durante todo el periodo restante.');
+            $now=$this->quote($this->db->idate(dol_now()));
+            if($incident->status==='open') $this->receiveIncident($id,$line->rowid,$incident->reason);
+            $this->transfer($new->fk_product,$new->serial,$c->available,$c->customer,'Renting: equipo sustituto '.$b->ref);
+            $this->query("UPDATE ".$this->table('asset')." SET status='out',fk_warehouse=".(int)$c->customer.' WHERE rowid='.(int)$new->rowid);
+            $this->query('INSERT INTO '.$this->table('line').' (fk_booking,fk_asset,condition_out,date_out) VALUES ('.(int)$id.','.(int)$new->rowid.','.$this->quote($new->item_condition).','.$now.')');
+            $newLine=$this->db->last_insert_id($this->table('line'));
+            $this->query('UPDATE '.$this->table('incident')." SET status='replaced',fk_new_line=".(int)$newLine.',resolution='.$this->quote($note).',date_resolution='.$now.' WHERE rowid='.(int)$incidentId);
+            $this->event('replace_out',$old->rowid,$id,'Sustituido por '.$new->serial.'. '.$note);
+            $this->event('replace_in',$new->rowid,$id,'Reemplaza a '.$old->serial.'. '.$note);
+            // Deliberately do not call receive(): this exchange preserves active units,
+            // booking status and the entire billing schedule, including manual pauses.
+            return $newLine;
+        });
+    }
+    public function receiveAll($id,array $expectedLines) {
+        $this->permission('ausgeben');
+        return $this->atomic(function()use($id,$expectedLines){
+            $this->config(true); $b=$this->booking($id,true);
+            if(!in_array($b->status,array('active','partial'),true)) throw new RuntimeException('Este renting ya no admite una devolución definitiva.');
+            $lines=$this->rows('SELECT rowid,date_out FROM '.$this->table('line').' WHERE fk_booking='.(int)$id.' AND date_return IS NULL ORDER BY rowid FOR UPDATE');
+            $actual=array_map(function($l){return (int)$l->rowid;},$lines);
+            $expected=array_map('intval',$expectedLines); sort($expected); sort($actual);
+            if($actual!==$expected) throw new RuntimeException('Los equipos pendientes cambiaron. Recargá y comprobá las series antes de recibir todos.');
+            foreach($lines as $line) {
+                if(!$line->date_out) throw new RuntimeException('Hay unidades sin entregar: revisá el renting antes de finalizar.');
+                $this->receive($id,$line->rowid);
+            }
+            $this->query('UPDATE '.$this->table('incident')." SET status='returned',resolution='Renting finalizado por devolución definitiva de todos los equipos',date_resolution=".$this->quote($this->db->idate(dol_now())).' WHERE fk_booking='.(int)$id.' AND entity='.$this->entity." AND status='received'");
+            $this->updateReturnStatus($id);
+            $this->pauseBilling($id,'Devolución definitiva de todos los equipos: renting finalizado.');
+            $this->event('return_all',0,$id,'Recepción conjunta de '.count($lines).' equipo(s). Entregas pendientes canceladas.');
+        });
+    }
+    public function receive($id, $lineid, $condition='pending') {
+        $this->permission('ausgeben');
+        if (!in_array($condition,array('pending','good','worn','damaged'),true)) { throw new RuntimeException('Condición de devolución inválida.'); }
         return $this->atomic(function () use ($id,$lineid,$condition) {
             $c=$this->config(true); $b=$this->booking($id,true);
             if (!in_array($b->status,array('active','partial'),true)) { throw new RuntimeException('Este renting no admite devoluciones.'); }
@@ -239,9 +363,18 @@ class RrRenting
             $this->query("UPDATE ".$this->table('asset')." SET status='review',item_condition=".$this->quote($condition).",fk_warehouse=".(int)$c->review." WHERE rowid=".(int)$a->rowid);
             $this->query("UPDATE ".$this->table('line')." SET date_return=".$this->quote($this->db->idate(dol_now())).",condition_in=".$this->quote($condition)." WHERE rowid=".(int)$lineid);
             $pending=$this->one("SELECT COUNT(*) qty FROM ".$this->table('line')." WHERE fk_booking=".(int)$id." AND date_return IS NULL");
-            $this->query("UPDATE ".$this->table('booking')." SET status=".$this->quote($pending->qty ? 'partial':'closed')." WHERE rowid=".(int)$id);
+            $this->updateReturnStatus($id);
+            $this->pauseBilling($id,$pending->qty?'Devolución parcial: revisar cantidad y próxima mensualidad.':'Todos los equipos devueltos: facturación detenida.');
             $this->event('return',$a->rowid,$id,$condition);
+            $this->query('UPDATE '.$this->table('incident')." SET status='returned',resolution='Devolución sin sustitución',date_resolution=".$this->quote($this->db->idate(dol_now())).' WHERE fk_line='.(int)$lineid." AND status='open' AND entity=".$this->entity);
         });
+    }
+    public function pauseBilling($id,$reason) {
+        $maps=$this->rows('SELECT fk_template FROM '.$this->table('billing').' WHERE fk_booking='.(int)$id);
+        if(!$maps) return;
+        $this->query('UPDATE '.$this->db->prefix().'facture_rec SET suspended=1 WHERE rowid='.(int)$maps[0]->fk_template.' AND entity='.$this->entity);
+        $this->query('UPDATE '.$this->table('billing')." SET state='paused',reason=".$this->quote(mb_substr($reason,0,255)).' WHERE fk_booking='.(int)$id);
+        $this->event('billing_pause',0,$id,$reason);
     }
     public function inspect($id,$destination,$condition,$note) {
         $this->permission('ausgeben');
@@ -257,6 +390,7 @@ class RrRenting
             $to=(int)$c->$destination;
             if ((int)$a->fk_warehouse!==$to) { $this->transfer($a->fk_product,$a->serial,$a->fk_warehouse,$to,'Renting: revisión '.$a->serial); }
             $this->query("UPDATE ".$this->table('asset')." SET status=".$this->quote($destination).",item_condition=".$this->quote($condition).",fk_warehouse=".$to." WHERE rowid=".(int)$id);
+            $this->query('UPDATE '.$this->table('line').' SET condition_in='.$this->quote($condition).' WHERE fk_asset='.(int)$id." AND date_return IS NOT NULL AND condition_in='pending'");
             $this->event('inspection',$id,0,$note);
         });
     }

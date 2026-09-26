@@ -27,6 +27,6 @@ Los contratos nativos siguen representando el acuerdo comercial: validarlos no e
 
 Los rentings anteriores mantienen fechas, equipos e historial; no se les asigna una línea por suposición. Si hay uno abierto para el mismo contrato y servicio, se impide crear una reserva nueva para ese compromiso hasta resolverlo. Sus contratos también quedan protegidos conservadoramente mientras estén abiertos.
 
-La facturación recurrente sigue usando sus plantillas nativas. Este cambio no crea ni actualiza plantillas, pagos o facturas existentes. Tampoco suspende la facturación al devolver equipos. La fuente contractual de cantidad y fechas queda conectada a la operación; su sincronización con las plantillas continúa pendiente.
+La ficha permite crear una nueva programación mensual a partir de la línea contractual. La entrega la activa y una devolución la pausa; una devolución parcial permite ajustar las cantidades futuras con confirmación del asesor. No migra plantillas antiguas ni recalcula facturas emitidas. El procedimiento y sus límites se describen en `FACTURACION-RENTING.md`, en la raíz del proyecto.
 
 La tabla de vínculos se crea en el arranque por la migración aditiva del módulo. Las validaciones del contrato usan triggers del módulo personalizado y requieren las rutas estándar de Dolibarr; escrituras directas en base de datos no están cubiertas por esos eventos.

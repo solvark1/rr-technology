@@ -43,7 +43,7 @@ require_once DOL_DOCUMENT_ROOT . '/contrat/class/contrat.class.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/company.lib.php';
 
-$seedVersion = '1';
+$seedVersion = '2';
 $adminLogin = getenv('DOLI_ADMIN_LOGIN') ?: 'admin';
 
 function rrRentSeedLog($message)
@@ -401,7 +401,7 @@ function rrEnsureContract($db, $user, $thirdparty, $service, array $data)
         $lineResult = $contract->addline(
             $service->description,
             115000,
-            1,
+            $data['qty'] ?? 1,
             13.0,
             0,
             0,
@@ -498,6 +498,8 @@ $serials = [
     'RR-FORGE-004',
     'RR-FORGE-005',
     'RR-FORGE-006',
+    'RR-FORGE-007',
+    'RR-FORGE-008',
 ];
 
 foreach ($serials as $serial) {
@@ -567,11 +569,12 @@ $start = dol_mktime(0, 0, 0, (int) date('m', $today), (int) date('d', $today), (
 
 $contractsData = [
     'esports' => [
-        'ref' => 'RR-DEMO-ESP-001',
-        'ref_ext' => 'rr-demo-contract-esports',
+        'ref' => 'RR-DEMO-ESP-005',
+        'qty' => 5,
+        'ref_ext' => 'rr-demo-contract-esports-five',
         'start' => $start,
         'end' => strtotime('+6 months', $start),
-        'note' => 'Contrato demo de 6 meses para organización de E-sports. Preparado para crear reservas desde el módulo Renting.',
+        'note' => 'Contrato demo de 5 PCs durante 6 meses para organización de E-sports. Preparado para crear reservas desde el módulo Renting.',
     ],
     'corporate' => [
         'ref' => 'RR-DEMO-CORP-001',
@@ -620,7 +623,7 @@ rrRentSeedLog('Seeder completado correctamente.');
 rrRentSeedLog('3 clientes demo configurados.');
 rrRentSeedLog('1 servicio mensual de renting configurado.');
 rrRentSeedLog('3 contratos validados configurados.');
-rrRentSeedLog('6 PCs serializadas registradas en RR-VENTA.');
+rrRentSeedLog('8 series demo verificadas; las nuevas se reciben en RR-VENTA y las existentes conservan su ubicación.');
 rrRentSeedLog('Siguiente paso: incorporar desde Renting las unidades deseadas a RR-RENTING y crear reservas.');
 rrRentSeedLog('------------------------------------------');
 } catch (Throwable $e) {

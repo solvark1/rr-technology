@@ -180,6 +180,8 @@ No generes una expedición de venta de las laptops para documentar este renting:
 
 ## 10. Facturar el servicio
 
+**Actualización:** los rentings vinculados a una línea contractual ya permiten **Crear programación mensual desde el contrato** en su ficha. Se activa con la entrega y se pausa al devolver equipos; en devoluciones parciales permite ajustar las unidades futuras y reanudar con un motivo. Consultar [Facturación vinculada al renting](FACTURACION-RENTING.md) para el flujo actual y sus límites. Las instrucciones manuales siguientes corresponden a plantillas independientes o antiguas, no a las gestionadas desde Renting.
+
 Usa el circuito de facturación de Dolibarr para el cliente y servicio del contrato.
 
 - Cobra el servicio, por ejemplo una mensualidad.
@@ -187,7 +189,7 @@ Usa el circuito de facturación de Dolibarr para el cliente y servicio del contr
 - Una segunda mensualidad no debe mover otra laptop.
 - Compose ejecuta cada minuto las plantillas recurrentes vencidas configuradas en estado **Borrador**. No realiza cobros ni envía correos. Las plantillas configuradas para validar o enviar automáticamente se omiten.
 
-### Configuración inicial de cada renting
+### Flujo manual para plantillas independientes o antiguas
 
 1. Abre el renting y pulsa **Preparar factura del contrato**. Comprueba el cliente y selecciona únicamente el servicio mensual; ajusta cantidad y tarifa a lo acordado. Incluye la referencia RT del renting en la descripción para reconocerla después.
 2. Guarda la primera factura como borrador y usa la opción de convertirla/crear una factura predefinida o recurrente. La plantilla copia sus líneas; no sustituye la factura inicial.
@@ -209,6 +211,8 @@ Dentro del renting, registra la condición de cada equipo y pulsa **Recibir y en
 - El equipo no vuelve automáticamente a estar disponible.
 
 ## 12. Revisar y liberar el equipo
+
+También puedes gestionar estas acciones desde **Renting → Revisión y reparación**. Para reemplazar un equipo averiado sin pausar mensualidades, utiliza **Incidencias y sustituciones** dentro del renting; consulta [Sustituciones y revisión técnica](SUSTITUCIONES-Y-REPARACIONES.md).
 
 En la ficha del equipo, selecciona el resultado y escribe una observación:
 
