@@ -21,3 +21,5 @@
 .rr-app .rr-return-panel{max-width:none}
 
 .rr-app .rr-product-photo{width:56px;height:56px;object-fit:contain;vertical-align:middle;margin-right:12px;border-radius:8px;background:#eef2f5;padding:3px}.rr-app .rr-product-placeholder{margin-right:10px}
+
+.rr-app .rr-product-photo{flex:0 0 56px;max-width:56px;border:1px solid #3b5061;background:#1c2c38}.rr-app h2>.rr-product-photo{width:88px;height:88px;max-width:88px}.rr-app .rr-incident h3>a{display:inline-flex;align-items:center;min-width:0}.rr-app .rr-product-placeholder{color:#65dbc3}

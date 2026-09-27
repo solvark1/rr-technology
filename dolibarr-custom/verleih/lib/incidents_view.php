@@ -1,6 +1,6 @@
 <?php
 if (!defined('DOL_DOCUMENT_ROOT')) exit;
-$incidents=$rr->rows('SELECT i.*,a.serial,pr.label,n.serial replacement FROM '.$rr->table('incident').' i JOIN '.$rr->table('line').' l ON l.rowid=i.fk_line JOIN '.$rr->table('asset').' a ON a.rowid=l.fk_asset JOIN '.$p.'product pr ON pr.rowid=a.fk_product LEFT JOIN '.$rr->table('line').' nl ON nl.rowid=i.fk_new_line LEFT JOIN '.$rr->table('asset').' n ON n.rowid=nl.fk_asset WHERE i.entity='.$e.' AND i.fk_booking='.(int)$id.' ORDER BY i.rowid DESC');
+$incidents=$rr->rows('SELECT i.*,a.serial,a.fk_product,pr.label,n.serial replacement FROM '.$rr->table('incident').' i JOIN '.$rr->table('line').' l ON l.rowid=i.fk_line JOIN '.$rr->table('asset').' a ON a.rowid=l.fk_asset JOIN '.$p.'product pr ON pr.rowid=a.fk_product LEFT JOIN '.$rr->table('line').' nl ON nl.rowid=i.fk_new_line LEFT JOIN '.$rr->table('asset').' n ON n.rowid=nl.fk_asset WHERE i.entity='.$e.' AND i.fk_booking='.(int)$id.' ORDER BY i.rowid DESC');
 print '<section class="rr-section"><h2>Incidencias y sustituciones</h2><p>Registrá el reporte del cliente. Podés recibir primero la unidad para revisión y entregar después un sustituto o el original reparado. La recepción por incidencia mantiene la facturación.</p>';
 if($user->hasRight('verleih','ausgeben') && in_array($b->status,array('active','partial'),true)) {
     $reportable=$rr->rows('SELECT l.rowid,CONCAT(pr.label,\' · \',a.serial) label FROM '.$rr->table('line').' l JOIN '.$rr->table('asset').' a ON a.rowid=l.fk_asset JOIN '.$p.'product pr ON pr.rowid=a.fk_product WHERE l.fk_booking='.(int)$id.' AND a.entity='.$e.' AND l.date_out IS NOT NULL AND l.date_return IS NULL AND NOT EXISTS (SELECT 1 FROM '.$rr->table('incident')." i WHERE i.fk_line=l.rowid AND i.status='open')");
@@ -13,7 +13,7 @@ if($user->hasRight('verleih','ausgeben') && in_array($b->status,array('active','
 if(!$incidents) print '<p class="rr-empty">No hay incidencias registradas para este renting.</p>';
 foreach($incidents as $incident) {
     $labels=array('open'=>'Pendiente de recepción','received'=>'Recibido · entrega pendiente','replaced'=>'Equipo sustituido','returned'=>'Devuelto sin sustitución');
-    print '<article class="rr-incident"><h3>'.rrh($incident->label.' · '.$incident->serial).' <span class="rr-badge">'.rrh($labels[$incident->status]??$incident->status).'</span></h3><p>'.rrh($incident->reason).'</p><p>Reporte: '.rrh($incident->date_creation).'</p>';
+    print '<article class="rr-incident"><h3>'.rrphoto($incident->fk_product).rrh($incident->label.' · '.$incident->serial).' <span class="rr-badge">'.rrh($labels[$incident->status]??$incident->status).'</span></h3><p>'.rrh($incident->reason).'</p><p>Reporte: '.rrh($incident->date_creation).'</p>';
     if($incident->replacement) print '<p>Reemplazo entregado: <strong>'.rrh($incident->replacement).'</strong> · '.rrh($incident->date_resolution).'</p>';
     if($incident->resolution) print '<p>'.rrh($incident->resolution).'</p>';
     if(in_array($incident->status,array('open','received'),true) && $user->hasRight('verleih','ausgeben')) {

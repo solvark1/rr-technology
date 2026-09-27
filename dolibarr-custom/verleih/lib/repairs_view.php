@@ -5,7 +5,7 @@ $queue=$rr->rows('SELECT a.*,pr.label FROM '.$rr->table('asset').' a JOIN '.$p.'
 if(!$queue) print '<p class="rr-empty">No hay equipos pendientes de revisión o reparación.</p>';
 foreach($queue as $asset) {
     $last=$rr->rows('SELECT ev.note,ev.date_creation,u.login FROM '.$rr->table('event').' ev LEFT JOIN '.$p.'user u ON u.rowid=ev.fk_user WHERE ev.entity='.$e.' AND ev.fk_asset='.(int)$asset->rowid.' ORDER BY ev.rowid DESC LIMIT 1');
-    print '<article class="rr-incident"><h3><a href="?view=assets&id='.(int)$asset->rowid.'">'.rrh($asset->label.' · '.$asset->serial).'</a> <span class="rr-badge '.rrh($asset->status).'">'.rrh(rrstate($asset->status)).'</span></h3><p>Condición registrada: '.rrh(rrstate($asset->item_condition)).'</p>';
+    print '<article class="rr-incident"><h3><a href="?view=assets&id='.(int)$asset->rowid.'">'.rrphoto($asset->fk_product).rrh($asset->label.' · '.$asset->serial).'</a> <span class="rr-badge '.rrh($asset->status).'">'.rrh(rrstate($asset->status)).'</span></h3><p>Condición registrada: '.rrh(rrstate($asset->item_condition)).'</p>';
     if($last) print '<p>Última actuación: '.rrh($last[0]->note ?: 'Sin observación').' · '.rrh($last[0]->login).' · '.rrh($last[0]->date_creation).'</p>';
     $future=$rr->one('SELECT COUNT(*) qty FROM '.$rr->table('line').' l JOIN '.$rr->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=".(int)$asset->rowid." AND b.entity=".$e." AND b.status='reserved' AND l.date_return IS NULL");
     if($future->qty) print '<p class="rr-hint">Esta unidad tiene '.(int)$future->qty.' reserva(s) pendiente(s). Coordiná su reparación antes de la próxima entrega.</p>';

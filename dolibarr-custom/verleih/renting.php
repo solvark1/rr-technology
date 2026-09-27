@@ -16,7 +16,7 @@ function rrphoto($productId) {
     static $photos=array();
     $productId=(int)$productId;
     if(!array_key_exists($productId,$photos)) {
-        $res=$db->query("SELECT share FROM ".$db->prefix()."ecm_files WHERE entity=".(int)$e." AND src_object_type='product' AND src_object_id=".$productId." AND share IS NOT NULL AND share<>'' AND filename LIKE '%.png' ORDER BY cover DESC,rowid DESC LIMIT 1");
+        $res=$db->query("SELECT share FROM ".$db->prefix()."ecm_files WHERE entity=".(int)$e." AND src_object_type='product' AND src_object_id=".$productId." AND share IS NOT NULL AND share<>'' AND (filename LIKE '%.png' OR filename LIKE '%.jpg' OR filename LIKE '%.jpeg' OR filename LIKE '%.webp') ORDER BY cover DESC,rowid DESC LIMIT 1");
         $row=$res?$db->fetch_object($res):null;
         $photos[$productId]=$row ? '<img class="rr-product-photo" loading="lazy" alt="" src="'.rrh(DOL_URL_ROOT.'/viewimage.php?hashp='.urlencode($row->share)).'">' : '<span class="fa fa-desktop rr-product-placeholder" aria-hidden="true"></span>';
     }
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     } catch(Throwable $ex) { setEventMessages($ex->getMessage(),null,'errors'); }
 }
 llxHeader('','Renting');
-print '<link rel="stylesheet" href="'.dol_buildpath('/verleih/css/renting.css',1).'?v=10">';
+print '<link rel="stylesheet" href="'.dol_buildpath('/verleih/css/renting.css',1).'?v=11">';
 print '<script defer src="'.dol_buildpath('/verleih/js/renting.js',1).'?v=5"></script>';
 print '<div class="rr-app"><header class="rr-hero"><div><div class="rr-eyebrow">R&R Technology · Gestión de equipos</div><h1>Renting</h1><p>Controlá tus equipos, organizá las entregas y acompañá cada devolución.</p></div><div class="rr-mark" aria-hidden="true"><span class="fa fa-desktop"></span></div></header>';
 print '<nav class="rr-nav" aria-label="Secciones de renting">';

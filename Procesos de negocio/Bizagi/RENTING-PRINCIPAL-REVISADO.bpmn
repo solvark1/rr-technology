@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Renting" targetNamespace="https://rr-technology.local/bpmn">
+  <bpmn:collaboration id="Collaboration">
+    <bpmn:participant id="Company" name="R&amp;R Technology" processRef="Process" />
+    <bpmn:participant id="Client" name="Cliente" />
+    <bpmn:messageFlow id="M01" name="Solicitud" sourceRef="Client" targetRef="R01" />
+    <bpmn:messageFlow id="M02" name="Falla" sourceRef="Client" targetRef="R12" />
+    <bpmn:messageFlow id="M03" name="Devolución acordada" sourceRef="Client" targetRef="R14" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process" name="Gestión del renting" isExecutable="false">
+    <bpmn:documentation>Proceso actual según PROCESOS-NEGOCIO-ANTES-DESPUES.md, revisión 26 de septiembre de 2026. Modelo descriptivo para Bizagi Modeler.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet">
+      <bpmn:lane id="Comercial" name="Comercial">
+        <bpmn:flowNodeRef>R01</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R02</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R07</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Logistica" name="Logística">
+        <bpmn:flowNodeRef>R03</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R06</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R08</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R09</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R10</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R11</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R12</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R13</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R19</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R14</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R15</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R16</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R17</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R18</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R20</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="ERP" name="Sistema ERP">
+        <bpmn:flowNodeRef>R04</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>R05</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="R01" name="Solicitud de alquiler recibida">
+      <bpmn:outgoing>S01</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDefinition_R01" />
+    </bpmn:startEvent>
+    <bpmn:userTask id="R02" name="Cotizar y registrar contrato">
+      <bpmn:incoming>S01</bpmn:incoming>
+      <bpmn:outgoing>S02</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="R03" name="Seleccionar unidades para el contrato">
+      <bpmn:incoming>S02</bpmn:incoming>
+      <bpmn:incoming>S05</bpmn:incoming>
+      <bpmn:outgoing>S03</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="R04" name="Comprobar disponibilidad">
+      <bpmn:documentation>El ERP comprueba disponibilidad por serie y periodo, cantidad completa y condiciones contractuales. No se crea la reserva si la selección no es válida.</bpmn:documentation>
+      <bpmn:incoming>S03</bpmn:incoming>
+      <bpmn:outgoing>S04</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="R05" name="¿Selección válida y completa?" gatewayDirection="Diverging">
+      <bpmn:incoming>S04</bpmn:incoming>
+      <bpmn:outgoing>S05</bpmn:outgoing>
+      <bpmn:outgoing>S06</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="R06" name="Confirmar reserva">
+      <bpmn:documentation>Logística confirma la reserva en el ERP. El sistema conserva la asignación de las unidades al contrato y su periodo.</bpmn:documentation>
+      <bpmn:incoming>S06</bpmn:incoming>
+      <bpmn:outgoing>S07</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="R07" name="Preparar programación de cobro">
+      <bpmn:incoming>S07</bpmn:incoming>
+      <bpmn:outgoing>S08</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="R08" name="Coordinar entrega con el cliente">
+      <bpmn:incoming>S08</bpmn:incoming>
+      <bpmn:outgoing>S09</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="R09" name="¿Mantiene la reserva?" gatewayDirection="Diverging">
+      <bpmn:incoming>S09</bpmn:incoming>
+      <bpmn:outgoing>S10</bpmn:outgoing>
+      <bpmn:outgoing>S11</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="R10" name="Entregar y registrar todos los equipos">
+      <bpmn:documentation>Logística entrega y registra todas las unidades. Al confirmar, el ERP comprueba periodo y disponibilidad, traslada las unidades a RR-CLIENTES y habilita la programación vinculada. Una entrega incompleta no se registra como exitosa.</bpmn:documentation>
+      <bpmn:incoming>S10</bpmn:incoming>
+      <bpmn:outgoing>S12</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="R20" gatewayDirection="Converging">
+      <bpmn:incoming>S12</bpmn:incoming>
+      <bpmn:incoming>S17</bpmn:incoming>
+      <bpmn:outgoing>S22</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:eventBasedGateway id="R11" name="Esperar novedad del cliente" gatewayDirection="Diverging">
+      <bpmn:documentation>El renting permanece activo entre novedades. La facturación mensual se gestiona en un proceso independiente. El vencimiento del periodo no acredita por sí mismo la recepción física de los equipos.</bpmn:documentation>
+      <bpmn:incoming>S22</bpmn:incoming>
+      <bpmn:outgoing>S13</bpmn:outgoing>
+      <bpmn:outgoing>S14</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="R12" name="Reporte de falla recibido">
+      <bpmn:incoming>S13</bpmn:incoming>
+      <bpmn:outgoing>S15</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDefinition_R12" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:subProcess id="R13" name="Atender incidencia y restablecer servicio">
+      <bpmn:documentation>Detalle incluido en el subproceso y en RENTING-INCIDENCIAS.bpmn. La incidencia no pausa automáticamente la facturación.</bpmn:documentation>
+      <bpmn:incoming>S15</bpmn:incoming>
+      <bpmn:outgoing>S16</bpmn:outgoing>
+      <bpmn:startEvent id="I01" name="Incidencia por atender">
+        <bpmn:outgoing>IS01</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="I02" name="Registrar reporte e identificar equipo">
+        <bpmn:incoming>IS01</bpmn:incoming>
+        <bpmn:outgoing>IS02</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="I03" name="Recibir equipo por incidencia">
+        <bpmn:documentation>Pasa a revisión y queda una entrega pendiente.</bpmn:documentation>
+        <bpmn:incoming>IS02</bpmn:incoming>
+        <bpmn:outgoing>IS03</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="I04" name="Consultar unidad apta para entregar">
+        <bpmn:incoming>IS03</bpmn:incoming>
+        <bpmn:incoming>IS10</bpmn:incoming>
+        <bpmn:outgoing>IS04</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="I05" name="¿Unidad disponible del mismo producto?" gatewayDirection="Diverging">
+        <bpmn:incoming>IS04</bpmn:incoming>
+        <bpmn:outgoing>IS05</bpmn:outgoing>
+        <bpmn:outgoing>IS07</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="I06" name="Entregar y registrar unidad de reemplazo">
+        <bpmn:documentation>El sistema comprueba disponibilidad para el periodo restante. Puede entregarse el original reparado.</bpmn:documentation>
+        <bpmn:incoming>IS05</bpmn:incoming>
+        <bpmn:outgoing>IS06</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:endEvent id="I07" name="Servicio restablecido">
+        <bpmn:incoming>IS06</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:userTask id="I08" name="Coordinar espera con el cliente">
+        <bpmn:incoming>IS07</bpmn:incoming>
+        <bpmn:outgoing>IS08</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:exclusiveGateway id="I09" name="¿Mantiene el servicio?" gatewayDirection="Diverging">
+        <bpmn:incoming>IS08</bpmn:incoming>
+        <bpmn:outgoing>IS09</bpmn:outgoing>
+        <bpmn:outgoing>IS11</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="I10" name="Dar seguimiento a la unidad pendiente">
+        <bpmn:documentation>Regresar a la consulta cuando exista nueva disponibilidad. La reparación ocurre en el proceso de inventario.</bpmn:documentation>
+        <bpmn:incoming>IS09</bpmn:incoming>
+        <bpmn:outgoing>IS10</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:endEvent id="I11" name="Cliente solicita finalización">
+        <bpmn:incoming>IS11</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="IS01" sourceRef="I01" targetRef="I02" name="" />
+      <bpmn:sequenceFlow id="IS02" sourceRef="I02" targetRef="I03" name="" />
+      <bpmn:sequenceFlow id="IS03" sourceRef="I03" targetRef="I04" name="" />
+      <bpmn:sequenceFlow id="IS04" sourceRef="I04" targetRef="I05" name="" />
+      <bpmn:sequenceFlow id="IS05" sourceRef="I05" targetRef="I06" name="Sí" />
+      <bpmn:sequenceFlow id="IS06" sourceRef="I06" targetRef="I07" name="" />
+      <bpmn:sequenceFlow id="IS07" sourceRef="I05" targetRef="I08" name="No" />
+      <bpmn:sequenceFlow id="IS08" sourceRef="I08" targetRef="I09" name="" />
+      <bpmn:sequenceFlow id="IS09" sourceRef="I09" targetRef="I10" name="Sí" />
+      <bpmn:sequenceFlow id="IS10" sourceRef="I10" targetRef="I04" name="Nueva disponibilidad" />
+      <bpmn:sequenceFlow id="IS11" sourceRef="I09" targetRef="I11" name="No: finalizar" />
+    </bpmn:subProcess>
+    <bpmn:exclusiveGateway id="R19" name="¿Resultado de atención?" gatewayDirection="Diverging">
+      <bpmn:incoming>S16</bpmn:incoming>
+      <bpmn:outgoing>S17</bpmn:outgoing>
+      <bpmn:outgoing>S18</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:intermediateCatchEvent id="R14" name="Devolución definitiva acordada">
+      <bpmn:incoming>S14</bpmn:incoming>
+      <bpmn:outgoing>S19</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDefinition_R14" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="R15" name="Recibir todos los equipos y finalizar renting">
+      <bpmn:documentation>Logística confirma la recepción física de todas las series pendientes. El ERP las traslada a RR-REVISION, cancela entregas de sustitutos pendientes, finaliza el renting y detiene futuras mensualidades. La operación se registra completa o se revierte si falla; se conservan facturas y pagos.</bpmn:documentation>
+      <bpmn:incoming>S18</bpmn:incoming>
+      <bpmn:incoming>S19</bpmn:incoming>
+      <bpmn:outgoing>S20</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="R16" name="Cancelar reserva sin entrega">
+      <bpmn:documentation>Libera las unidades; la programación preparada permanece detenida.</bpmn:documentation>
+      <bpmn:incoming>S11</bpmn:incoming>
+      <bpmn:outgoing>S21</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="R17" name="Renting finalizado">
+      <bpmn:incoming>S20</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="R18" name="Reserva cancelada">
+      <bpmn:incoming>S21</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="S01" sourceRef="R01" targetRef="R02" name="" />
+    <bpmn:sequenceFlow id="S02" sourceRef="R02" targetRef="R03" name="" />
+    <bpmn:sequenceFlow id="S03" sourceRef="R03" targetRef="R04" name="" />
+    <bpmn:sequenceFlow id="S04" sourceRef="R04" targetRef="R05" name="" />
+    <bpmn:sequenceFlow id="S05" sourceRef="R05" targetRef="R03" name="No: corregir" />
+    <bpmn:sequenceFlow id="S06" sourceRef="R05" targetRef="R06" name="Sí" />
+    <bpmn:sequenceFlow id="S07" sourceRef="R06" targetRef="R07" name="" />
+    <bpmn:sequenceFlow id="S08" sourceRef="R07" targetRef="R08" name="" />
+    <bpmn:sequenceFlow id="S09" sourceRef="R08" targetRef="R09" name="" />
+    <bpmn:sequenceFlow id="S10" sourceRef="R09" targetRef="R10" name="Sí" />
+    <bpmn:sequenceFlow id="S11" sourceRef="R09" targetRef="R16" name="No" />
+    <bpmn:sequenceFlow id="S12" sourceRef="R10" targetRef="R20" name="" />
+    <bpmn:sequenceFlow id="S13" sourceRef="R11" targetRef="R12" name="" />
+    <bpmn:sequenceFlow id="S14" sourceRef="R11" targetRef="R14" name="" />
+    <bpmn:sequenceFlow id="S15" sourceRef="R12" targetRef="R13" name="" />
+    <bpmn:sequenceFlow id="S16" sourceRef="R13" targetRef="R19" name="" />
+    <bpmn:sequenceFlow id="S17" sourceRef="R19" targetRef="R20" name="Restablecido" />
+    <bpmn:sequenceFlow id="S18" sourceRef="R19" targetRef="R15" name="Finalizar" />
+    <bpmn:sequenceFlow id="S19" sourceRef="R14" targetRef="R15" name="" />
+    <bpmn:sequenceFlow id="S20" sourceRef="R15" targetRef="R17" name="" />
+    <bpmn:sequenceFlow id="S21" sourceRef="R16" targetRef="R18" name="" />
+    <bpmn:sequenceFlow id="S22" sourceRef="R20" targetRef="R11" />
+    <bpmn:textAnnotation id="Note1">
+      <bpmn:text>Al confirmar la entrega completa, el ERP traslada los equipos a RR-CLIENTES y habilita el cobro mensual.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Assoc_Note1" sourceRef="R10" targetRef="Note1" associationDirection="None" />
+    <bpmn:textAnnotation id="Note2">
+      <bpmn:text>El ERP envía las unidades a revisión, cancela sustituciones pendientes y detiene futuras mensualidades. Conserva facturas y pagos.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Assoc_Note2" sourceRef="R15" targetRef="Note2" associationDirection="None" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram">
+    <bpmndi:BPMNPlane id="Plane" bpmnElement="Collaboration">
+      <bpmndi:BPMNShape id="DI_Client" bpmnElement="Client" isHorizontal="true">
+        <dc:Bounds x="80" y="50" width="2980" height="75" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Company" bpmnElement="Company" isHorizontal="true">
+        <dc:Bounds x="80" y="200" width="2980" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Comercial" bpmnElement="Comercial" isHorizontal="true">
+        <dc:Bounds x="110" y="200" width="2950" height="160" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Logistica" bpmnElement="Logistica" isHorizontal="true">
+        <dc:Bounds x="110" y="360" width="2950" height="570" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_ERP" bpmnElement="ERP" isHorizontal="true">
+        <dc:Bounds x="110" y="930" width="2950" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R01" bpmnElement="R01">
+        <dc:Bounds x="180" y="267" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="135" y="310" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R02" bpmnElement="R02">
+        <dc:Bounds x="290" y="245" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R03" bpmnElement="R03">
+        <dc:Bounds x="480" y="430" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R04" bpmnElement="R04">
+        <dc:Bounds x="680" y="965" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R05" bpmnElement="R05">
+        <dc:Bounds x="895" y="980" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="850" y="1037" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R06" bpmnElement="R06">
+        <dc:Bounds x="1030" y="430" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R07" bpmnElement="R07">
+        <dc:Bounds x="1230" y="245" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R08" bpmnElement="R08">
+        <dc:Bounds x="1430" y="430" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R09" bpmnElement="R09">
+        <dc:Bounds x="1640" y="445" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1595" y="502" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R10" bpmnElement="R10">
+        <dc:Bounds x="1770" y="430" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R11" bpmnElement="R11">
+        <dc:Bounds x="2040" y="445" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2000" y="502" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R12" bpmnElement="R12">
+        <dc:Bounds x="2145" y="452" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2100" y="495" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R13" bpmnElement="R13" isExpanded="false">
+        <dc:Bounds x="2260" y="430" width="165" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R19" bpmnElement="R19">
+        <dc:Bounds x="2485" y="445" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2440" y="502" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R14" bpmnElement="R14">
+        <dc:Bounds x="2145" y="692" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2100" y="735" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R15" bpmnElement="R15">
+        <dc:Bounds x="2670" y="670" width="165" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R16" bpmnElement="R16">
+        <dc:Bounds x="1770" y="790" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R17" bpmnElement="R17">
+        <dc:Bounds x="2910" y="692" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2865" y="735" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_R18" bpmnElement="R18">
+        <dc:Bounds x="1995" y="812" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1950" y="855" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Note1" bpmnElement="Note1">
+        <dc:Bounds x="1740" y="550" width="230" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Note2" bpmnElement="Note2">
+        <dc:Bounds x="2650" y="805" width="290" height="105" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_S01" bpmnElement="S01">
+        <di:waypoint x="216" y="285" />
+        <di:waypoint x="290" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S02" bpmnElement="S02">
+        <di:waypoint x="440" y="285" />
+        <di:waypoint x="555" y="285" />
+        <di:waypoint x="555" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S03" bpmnElement="S03">
+        <di:waypoint x="630" y="470" />
+        <di:waypoint x="650" y="470" />
+        <di:waypoint x="650" y="1005" />
+        <di:waypoint x="680" y="1005" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S04" bpmnElement="S04">
+        <di:waypoint x="830" y="1005" />
+        <di:waypoint x="895" y="1005" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S05" bpmnElement="S05">
+        <di:waypoint x="920" y="1030" />
+        <di:waypoint x="920" y="1090" />
+        <di:waypoint x="450" y="1090" />
+        <di:waypoint x="450" y="470" />
+        <di:waypoint x="480" y="470" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="928" y="1002" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S06" bpmnElement="S06">
+        <di:waypoint x="945" y="1005" />
+        <di:waypoint x="1105" y="1005" />
+        <di:waypoint x="1105" y="510" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="953" y="977" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S07" bpmnElement="S07">
+        <di:waypoint x="1180" y="470" />
+        <di:waypoint x="1205" y="470" />
+        <di:waypoint x="1205" y="285" />
+        <di:waypoint x="1230" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S08" bpmnElement="S08">
+        <di:waypoint x="1380" y="285" />
+        <di:waypoint x="1505" y="285" />
+        <di:waypoint x="1505" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S09" bpmnElement="S09">
+        <di:waypoint x="1580" y="470" />
+        <di:waypoint x="1640" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S10" bpmnElement="S10">
+        <di:waypoint x="1690" y="470" />
+        <di:waypoint x="1770" y="470" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1698" y="442" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S11" bpmnElement="S11">
+        <di:waypoint x="1665" y="495" />
+        <di:waypoint x="1665" y="830" />
+        <di:waypoint x="1770" y="830" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1673" y="467" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S12" bpmnElement="S12">
+        <di:waypoint x="1920" y="470" />
+        <di:waypoint x="1940" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S13" bpmnElement="S13">
+        <di:waypoint x="2090" y="470" />
+        <di:waypoint x="2145" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S14" bpmnElement="S14">
+        <di:waypoint x="2065" y="495" />
+        <di:waypoint x="2065" y="710" />
+        <di:waypoint x="2145" y="710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S15" bpmnElement="S15">
+        <di:waypoint x="2181" y="470" />
+        <di:waypoint x="2260" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S16" bpmnElement="S16">
+        <di:waypoint x="2425" y="470" />
+        <di:waypoint x="2485" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S17" bpmnElement="S17">
+        <di:waypoint x="2510" y="445" />
+        <di:waypoint x="2510" y="380" />
+        <di:waypoint x="1965" y="380" />
+        <di:waypoint x="1965" y="445" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2518" y="417" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S18" bpmnElement="S18">
+        <di:waypoint x="2535" y="470" />
+        <di:waypoint x="2590" y="470" />
+        <di:waypoint x="2590" y="710" />
+        <di:waypoint x="2670" y="710" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2543" y="442" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S19" bpmnElement="S19">
+        <di:waypoint x="2181" y="710" />
+        <di:waypoint x="2670" y="710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S20" bpmnElement="S20">
+        <di:waypoint x="2835" y="710" />
+        <di:waypoint x="2910" y="710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_S21" bpmnElement="S21">
+        <di:waypoint x="1920" y="830" />
+        <di:waypoint x="1995" y="830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_M01" bpmnElement="M01">
+        <di:waypoint x="198" y="125" />
+        <di:waypoint x="198" y="267" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="206" y="97" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_M02" bpmnElement="M02">
+        <di:waypoint x="2163" y="125" />
+        <di:waypoint x="2163" y="452" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2171" y="97" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_M03" bpmnElement="M03">
+        <di:waypoint x="2630" y="125" />
+        <di:waypoint x="2630" y="630" />
+        <di:waypoint x="2163" y="630" />
+        <di:waypoint x="2163" y="692" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2638" y="97" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Assoc_Note1" bpmnElement="Assoc_Note1">
+        <di:waypoint x="1845" y="510" />
+        <di:waypoint x="1845" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Assoc_Note2" bpmnElement="Assoc_Note2">
+        <di:waypoint x="2750" y="750" />
+        <di:waypoint x="2750" y="805" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="DI_R20" bpmnElement="R20" isMarkerVisible="true">
+        <dc:Bounds x="1940" y="445" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="DI_S22" bpmnElement="S22">
+        <di:waypoint x="1990" y="470" />
+        <di:waypoint x="2040" y="470" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_Incidencias" name="Atender incidencia y restablecer servicio">
+    <bpmndi:BPMNPlane id="Plane_Incidencias" bpmnElement="R13">
+      <bpmndi:BPMNShape id="DI_I01" bpmnElement="I01">
+        <dc:Bounds x="180" y="280" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="135" y="323" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I02" bpmnElement="I02">
+        <dc:Bounds x="290" y="258" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I03" bpmnElement="I03">
+        <dc:Bounds x="490" y="258" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I04" bpmnElement="I04">
+        <dc:Bounds x="690" y="258" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I05" bpmnElement="I05">
+        <dc:Bounds x="900" y="273" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="855" y="330" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I06" bpmnElement="I06">
+        <dc:Bounds x="1050" y="258" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I07" bpmnElement="I07">
+        <dc:Bounds x="1300" y="280" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1255" y="323" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I08" bpmnElement="I08">
+        <dc:Bounds x="1040" y="490" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I09" bpmnElement="I09">
+        <dc:Bounds x="1250" y="505" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1205" y="562" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I10" bpmnElement="I10">
+        <dc:Bounds x="1420" y="490" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_I11" bpmnElement="I11">
+        <dc:Bounds x="1257" y="720" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1212" y="763" width="140" height="44" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_IS01" bpmnElement="IS01">
+        <di:waypoint x="216" y="298" />
+        <di:waypoint x="290" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS02" bpmnElement="IS02">
+        <di:waypoint x="440" y="298" />
+        <di:waypoint x="490" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS03" bpmnElement="IS03">
+        <di:waypoint x="640" y="298" />
+        <di:waypoint x="690" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS04" bpmnElement="IS04">
+        <di:waypoint x="840" y="298" />
+        <di:waypoint x="900" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS05" bpmnElement="IS05">
+        <di:waypoint x="950" y="298" />
+        <di:waypoint x="1050" y="298" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="958" y="270" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS06" bpmnElement="IS06">
+        <di:waypoint x="1220" y="298" />
+        <di:waypoint x="1300" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS07" bpmnElement="IS07">
+        <di:waypoint x="925" y="323" />
+        <di:waypoint x="925" y="530" />
+        <di:waypoint x="1040" y="530" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="933" y="295" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS08" bpmnElement="IS08">
+        <di:waypoint x="1190" y="530" />
+        <di:waypoint x="1250" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS09" bpmnElement="IS09">
+        <di:waypoint x="1300" y="530" />
+        <di:waypoint x="1420" y="530" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1308" y="502" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS10" bpmnElement="IS10">
+        <di:waypoint x="1500" y="490" />
+        <di:waypoint x="1500" y="220" />
+        <di:waypoint x="765" y="220" />
+        <di:waypoint x="765" y="258" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1508" y="462" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_IS11" bpmnElement="IS11">
+        <di:waypoint x="1275" y="555" />
+        <di:waypoint x="1275" y="720" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1283" y="527" width="130" height="25" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
