@@ -13,7 +13,7 @@ class modVerleih extends DolibarrModules
         $this->name='Verleih'; $this->const_name='MAIN_MODULE_VERLEIH';
         $this->description='Renting de equipos y componentes con clientes e inventario de Dolibarr';
         $this->descriptionlong='R&R Technology: reservas por fechas, equipos por número de serie, contratos, entregas, devoluciones y revisión.';
-        $this->editor_name='R&R Technology / Verleih'; $this->editor_url=''; $this->version='2.0.1';
+        $this->editor_name='R&R Technology / Verleih'; $this->editor_url=''; $this->version='2.5.0';
         $this->picto='fa-desktop'; $this->langfiles=array('verleih@verleih');
         $this->module_parts=array('triggers'=>1,'hooks'=>array('mouvementstock'),'css'=>array(),'js'=>array());
         $this->dirs=array(); $this->config_page_url=array('setup.php@verleih');
@@ -28,7 +28,7 @@ class modVerleih extends DolibarrModules
         }
         $this->menu=array();
         $this->menu[]=array('fk_menu'=>'','type'=>'top','titre'=>'VerleihMenuTop','prefix'=>img_picto('','fa-desktop','class="pictofixedwidth valignmiddle"'),'mainmenu'=>'verleih','leftmenu'=>'','url'=>'/verleih/renting.php','langs'=>'verleih@verleih','position'=>1080,'enabled'=>'isModEnabled("verleih")','perms'=>'$user->hasRight("verleih", "lire")','target'=>'','user'=>2);
-        foreach(array('dashboard'=>'Resumen','assets'=>'Equipos','bookings'=>'Rentings','settings'=>'Configuración') as $view=>$label) {
+        foreach(array('dashboard'=>'Resumen','assets'=>'Equipos','bookings'=>'Rentings','incidents'=>'Incidencias','repairs'=>'Revisión y reparación','settings'=>'Configuración') as $view=>$label) {
             $right=$view==='settings'?'configurer':'lire';
             $this->menu[]=array('fk_menu'=>'fk_mainmenu=verleih','type'=>'left','titre'=>$label,'mainmenu'=>'verleih','leftmenu'=>'rr_'.$view,'url'=>'/verleih/renting.php?view='.$view,'langs'=>'verleih@verleih','position'=>1081+count($this->menu),'enabled'=>'isModEnabled("verleih")','perms'=>'$user->hasRight("verleih", "'.$right.'")','target'=>'','user'=>2);
         }
@@ -45,4 +45,3 @@ class modVerleih extends DolibarrModules
     }
     public function remove($options='') { return $this->_remove(array(),$options); }
 }
-

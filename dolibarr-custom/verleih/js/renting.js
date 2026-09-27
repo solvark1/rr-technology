@@ -133,3 +133,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded',function(){
+ document.querySelectorAll('.rr-equipment-search').forEach(function(input){
+  const select=input.closest('form').querySelector('select[name="line"]');
+  const options=Array.from(select.options).map(o=>({value:o.value,text:o.textContent}));
+  const selected=new URLSearchParams(location.search).get('equipment');
+  if(selected && options.some(o=>o.value===selected)) select.value=selected;
+  input.addEventListener('input',function(){
+   const current=select.value; const query=input.value.toLocaleLowerCase();
+   select.replaceChildren();
+   options.filter(o=>!o.value || o.text.toLocaleLowerCase().includes(query)).forEach(o=>select.add(new Option(o.text,o.value)));
+   if(Array.from(select.options).some(o=>o.value===current)) select.value=current;
+  });
+ });
+});
+
+document.addEventListener('DOMContentLoaded',function(){
+ document.querySelectorAll('[data-rr-autoload]').forEach(function(select){
+  select.addEventListener('change',function(){
+   const url=new URL(window.location.href);
+   url.search='';
+   url.searchParams.set('view','incidents');
+   if(select.name==='customer') {
+    if(select.value) url.searchParams.set('customer',select.value);
+   } else {
+    const customer=select.form.querySelector('input[name="customer"]');
+    if(customer && customer.value) url.searchParams.set('customer',customer.value);
+    if(select.value) url.searchParams.set('id',select.value);
+   }
+   window.location.assign(url.toString());
+  });
+ });
+});

@@ -48,6 +48,7 @@ services:
       RR_MAIN_UPLOAD_DOC_KB: 25600
       RR_THEME_DARK_MODE: 2 # 0: claro, 1: segun navegador, 2: siempre oscuro
       RR_CURRENCY: "CRC" # Colon costarricense; se aplica antes de los seeders
+      RR_ANALYTICS_SEED: ${RR_ANALYTICS_SEED:-1} # Historia ficticia para visualizaciones; 0 desactiva la carga
       RR_RENTING_DEMO_SEED: "1" # 0 desactiva los datos de ejemplo
       RR_RECURRING_BILLING: "1" # Plantillas recurrentes en borrador; revision cada minuto
       
@@ -60,7 +61,9 @@ services:
           php /var/www/scripts/rr-start/26-configure-cr-vat.php || exit 1
           php /var/www/scripts/rr-start/30-configure-theme.php || exit 1
           php /var/www/scripts/rr-start/40-seed-renting-demo.php || exit 1
+          runuser -u www-data -- php /var/www/scripts/rr-start/42-seed-product-images.php || exit 1
           php /var/www/scripts/rr-start/45-seed-bank-demo.php || exit 1
+          php /var/www/scripts/rr-start/47-seed-analytics.php || exit 1
 
           if [ "$$RR_RECURRING_BILLING" = "1" ]; then
             (
@@ -94,6 +97,7 @@ services:
       - ./dolibarr-custom:/var/www/html/custom
       - ./docker/init:/var/www/scripts/docker-init.d:ro
       - ./docker/start:/var/www/scripts/rr-start:ro
+      - ./docker/seed-assets/products:/var/www/rr-seed-products:ro
 
 
 volumes:
