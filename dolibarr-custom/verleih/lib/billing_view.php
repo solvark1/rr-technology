@@ -24,7 +24,7 @@ if ($user->hasRight('facture','lire')) {
             } elseif(in_array($b->status,array('active','partial'),true)) {
                 print '<details><summary>Revisar y reanudar facturación</summary><p>Solo cambia las mensualidades futuras. No recalcula facturas anteriores ni prorratea días. Una fecha posterior omite los periodos pendientes anteriores a esa fecha: revisalos antes de confirmar.</p>';
                 rrf('billingresume','bookings',$id);
-                print '<p><label>Próxima mensualidad <input type="date" required name="nextdate" min="'.rrh(max(dol_print_date(dol_now(),'%Y-%m-%d'),substr((string)$map->date_when,0,10))).'"></label></p><p><label>Cantidad a facturar <select name="adjust"><option value="0">Mantener la cantidad actualmente programada</option><option value="1">Ajustar a los equipos que siguen entregados</option></select></label></p><p><label class="rr-full-field">Motivo / acuerdo con el cliente <textarea name="reason" required maxlength="255" rows="4" placeholder="Describí el ajuste acordado…"></textarea></label></p>';
+                print '<p><label>Próxima mensualidad <input type="date" required name="nextdate" min="'.rrh(max($rr->today(),substr((string)$map->date_when,0,10))).'"></label></p><p><label>Cantidad a facturar <select name="adjust"><option value="0">Mantener la cantidad actualmente programada</option><option value="1">Ajustar a los equipos que siguen entregados</option></select></label></p><p><label class="rr-full-field">Motivo / acuerdo con el cliente <textarea name="reason" required maxlength="255" rows="4" placeholder="Describí el ajuste acordado…"></textarea></label></p>';
                 rrb('Confirmar ajuste y reanudar'); print '</details>';
             }
         }

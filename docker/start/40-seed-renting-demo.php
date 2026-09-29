@@ -564,8 +564,9 @@ foreach ($clientsData as $key => $clientData) {
 /* Contratos demo                                                            */
 /* ------------------------------------------------------------------------- */
 
-$today = dol_now();
-$start = dol_mktime(0, 0, 0, (int) date('m', $today), (int) date('d', $today), (int) date('Y', $today));
+// These are business calendar dates, not the UTC day of the container.
+$businessDay = (new DateTimeImmutable('now', new DateTimeZone(getenv('RR_BUSINESS_TIMEZONE') ?: 'America/Costa_Rica')))->format('Y-m-d');
+$start = strtotime($businessDay . ' 00:00:00');
 
 $contractsData = [
     'esports' => [

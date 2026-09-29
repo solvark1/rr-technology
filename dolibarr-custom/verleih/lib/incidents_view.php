@@ -23,7 +23,7 @@ foreach($incidents as $incident) {
             rrb('Recibir por incidencia y dejar entrega pendiente');
         }
         $choices=$rr->replacementCandidates($id,$incident->fk_line);
-        if($choices && $b->date_end>=dol_print_date(dol_now(),'%Y-%m-%d')) {
+        if($choices && $b->date_end>=$rr->today()) {
             print '<details><summary>'.($incident->status==='received'?'Entregar sustituto o equipo reparado':'Recibir y sustituir en el mismo momento').'</summary><p>Se ofrecen unidades del mismo producto disponibles durante el resto del contrato. No es una devolución que termine el alquiler.</p>';
             rrf('replace',$view,$id); print '<input type="hidden" name="incident" value="'.(int)$incident->rowid.'"><p><label>Serie de reemplazo '; rrs('replacement',$choices); print '</label></p><p><label class="rr-full-field">Observación de la entrega <textarea required name="note" maxlength="255" rows="3"></textarea></label></p><p><label class="rr-check"><input type="checkbox" name="exchangeconfirmed" value="1" required> Confirmo la recepción del original (ahora o previamente) y la entrega física de la unidad seleccionada.</label></p>';
             rrb('Confirmar sustitución sin cambiar facturación'); print '</details>';

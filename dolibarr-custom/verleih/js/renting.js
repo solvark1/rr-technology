@@ -68,6 +68,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const customer = form.querySelector('[name="soc"]');
         const contract = form.querySelector('[name="contract"]');
         const product = form.querySelector('[name="equipmentproduct"]');
+        const products = Array.from(product.options).slice(1).map(o => o.cloneNode(true));
+        const contractEdit = form.querySelector('#rr-contract-edit');
+        const contractUrl = contractEdit.getAttribute('href');
         const contracts = Array.from(contract.options).slice(1).map(o => o.cloneNode(true));
         const lines = Array.from(contractLine.options).slice(1).map(o => o.cloneNode(true));
         const summary = form.querySelector('#rr-contract-summary');
@@ -79,14 +82,19 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         const check = function () {
             const option = contractLine.selectedOptions[0];
+            const requiredProduct = option?.dataset.product || '';
+            refill(product, products.filter(o => o.value === requiredProduct));
+            product.value = requiredProduct;
+            contractEdit.hidden = !contract.value;
+            contractEdit.href = contractUrl + encodeURIComponent(contract.value);
             const qty = Number(option?.dataset.qty || 0);
             const start = option?.dataset.start || ''; const end = option?.dataset.end || '';
-            const valid = Number.isInteger(qty) && qty > 0 && start && end && end >= start;
+            const valid = Number.isInteger(qty) && qty > 0 && start && end && end >= start && start >= summary.dataset.today;
             let available = 0;
             choices.forEach(function (input) {
                 const row = input.closest('tr');
-                const busy = JSON.parse(row.dataset.busy || '[]');
-                const free = valid && product.value === row.dataset.product && !busy.some(b => (b.date_start <= end && b.date_end >= start) || (row.dataset.state === 'out' && b.date_end < new Date().toLocaleDateString('sv-SE')));
+                const eligible = (option?.dataset.available || '').split(',');
+                const free = valid && product.value === row.dataset.product && eligible.includes(input.value);
                 input.disabled = !free;
                 if (!free) input.checked = false;
                 row.dataset.eligible = free ? 'yes' : 'no'; row.hidden = !free;
@@ -95,8 +103,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const chosen = choices.filter(c => c.checked).length;
             submit.disabled = !valid || !product.value || chosen !== qty || available < qty;
-            if (!contractLine.value) summary.textContent = 'Seleccioná una línea del contrato.';
-            else if (!valid) summary.textContent = 'Completá en el contrato una cantidad entera positiva y las fechas previstas de inicio y fin.';
+            if (contract.selectedOptions[0]?.dataset.draft === 'yes') summary.textContent = 'Este contrato está en borrador. Abrilo y validalo después de guardar las fechas; luego recargá esta página. No se puede reservar un contrato sin validar.';
+            else if (!contractLine.value) summary.textContent = 'Seleccioná una línea del contrato.';
+            else if (!product.value) summary.textContent = 'Este servicio no tiene un producto físico vinculado. Asignalo en Renting → Configuración antes de reservar.';
+            else if (!valid) summary.textContent = 'Completá en el contrato una cantidad entera positiva y un periodo que empiece hoy (' + summary.dataset.today + ') o después.';
             else summary.textContent = 'Periodo del contrato: ' + start + ' → ' + end + '. Requiere ' + qty + ' unidades. Seleccionadas: ' + chosen + ' de ' + qty + (product.value ? '. Disponibles para este periodo: ' + available + (available < qty ? '. No hay suficientes unidades para completar la reserva.' : '.') : '. Elegí el producto físico.');
         };
         const changed = function (element, handler) {
