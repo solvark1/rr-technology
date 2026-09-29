@@ -12,6 +12,7 @@ RUN apt-get update && \
 RUN pip3 install --break-system-packages --no-cache-dir \
     pandas \
     matplotlib \
+    pymongo \
     mysql-connector-python
 
 # Habilitar shell_exec (y solo esa función) sin tocar el php.ini principal,

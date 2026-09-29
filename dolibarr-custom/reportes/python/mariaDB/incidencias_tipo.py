@@ -1,11 +1,12 @@
+import warnings
+warnings.filterwarnings("ignore")
 import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
 
 # Conexión a MariaDB
 conexion = mysql.connector.connect(
-    host="localhost",
-    port=3306,
+    host="mariaDB",
     user="dolibarr",
     password="123",
     database="dolidb"
@@ -23,8 +24,6 @@ ORDER BY cantidad DESC
 
 df = pd.read_sql(consulta, conexion)
 
-print(df)
-
 # Gráfico
 plt.figure(figsize=(8, 5))
 
@@ -38,6 +37,6 @@ plt.xlabel("Estado")
 plt.ylabel("Cantidad de incidencias")
 
 plt.tight_layout()
-plt.show()
+plt.savefig("/var/www/html/custom/reportes/python/graficos/incidencias_tipo.png", bbox_inches="tight")
 
 conexion.close()

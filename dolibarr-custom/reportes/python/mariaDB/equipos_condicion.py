@@ -1,10 +1,12 @@
+import warnings
+warnings.filterwarnings("ignore")
 import mysql.connector
 import pandas as pd
 import matplotlib.pyplot as plt
 
 # Conexión a MariaDB
 conexion = mysql.connector.connect(
-    host="localhost",
+    host="mariaDB",
     port=3306,
     user="dolibarr",
     password="123",
@@ -23,8 +25,6 @@ ORDER BY cantidad DESC
 
 df = pd.read_sql(consulta, conexion)
 
-print(df)
-
 # Gráfico
 plt.figure(figsize=(8, 5))
 
@@ -39,6 +39,5 @@ plt.ylabel("Cantidad de equipos")
 
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.show()
-
+plt.savefig("/var/www/html/custom/reportes/python/graficos/equipos_condicion.png", bbox_inches="tight")
 conexion.close()
