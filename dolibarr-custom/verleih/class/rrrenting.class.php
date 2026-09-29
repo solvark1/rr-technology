@@ -17,6 +17,16 @@ class RrRenting
         $this->db = $db; $this->user = $user; $this->entity = (int) $entity;
     }
     public function table($name) { return $this->db->prefix().'rr_renting_'.$name; }
+    public function assetBookings(array $ids,$pendingOnly=true) {
+        $ids=array_values(array_unique(array_filter(array_map('intval',$ids),function($id){return $id>0;})));
+        if(!$ids) return array();
+        $p=$this->db->prefix();
+        return $this->rows('SELECT l.fk_asset,l.date_out,l.date_return,b.rowid booking_id,b.ref,b.status,b.date_start,b.date_end,c.rowid contract_id,c.ref contract_ref,s.nom customer FROM '.$this->table('line').' l JOIN '.$this->table('asset').' a ON a.rowid=l.fk_asset JOIN '.$this->table('booking').' b ON b.rowid=l.fk_booking JOIN '.$p.'contrat c ON c.rowid=b.fk_contract JOIN '.$p.'societe s ON s.rowid=b.fk_soc WHERE a.entity='.$this->entity.' AND b.entity='.$this->entity.' AND c.entity='.$this->entity.' AND s.entity='.$this->entity.' AND a.rowid IN ('.implode(',',$ids).')'.($pendingOnly?" AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL":'').' ORDER BY b.date_start,b.rowid,l.rowid');
+    }
+    public function today($timestamp=null) {
+        $zone=new DateTimeZone(getenv('RR_BUSINESS_TIMEZONE') ?: 'America/Costa_Rica');
+        return (new DateTimeImmutable('@'.($timestamp===null ? dol_now() : (int)$timestamp)))->setTimezone($zone)->format('Y-m-d');
+    }
     public function quote($value) { return "'".$this->db->escape((string) $value)."'"; }
     public function query($sql) {
         $r = $this->db->query($sql);
@@ -145,6 +155,27 @@ class RrRenting
             $this->event('enroll',$id,0,$note); return $id;
         });
     }
+    public function reservationCandidates($product,$start,$end) {
+        if(!$start || !$end || $start<$this->today() || $end<$start) return array();
+        return $this->rows('SELECT a.rowid FROM '.$this->table('asset')." a WHERE a.entity=".$this->entity.' AND a.fk_product='.(int)$product." AND a.status IN ('available','out') AND NOT EXISTS (SELECT 1 FROM ".$this->table('line').' l JOIN '.$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=a.rowid AND b.entity=".$this->entity." AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL AND ((b.date_start<=".$this->quote($end).' AND b.date_end>='.$this->quote($start).') OR (l.date_out IS NOT NULL AND b.date_end<'.$this->quote($this->today()).'))) ORDER BY a.rowid');
+    }
+    public function serviceProduct($service) {
+        $p=$this->db->prefix();
+        $rows=$this->rows("SELECT pr.rowid,pr.label FROM ".$this->table('service_product')." m JOIN ".$p."product pr ON pr.rowid=m.fk_product JOIN ".$p."product s ON s.rowid=m.fk_service WHERE m.entity=".$this->entity." AND m.fk_service=".(int)$service." AND pr.entity=".$this->entity." AND s.entity=".$this->entity." AND pr.fk_product_type=0 AND pr.tobatch=2 AND s.fk_product_type=1");
+        if (!$rows) throw new RuntimeException('Este servicio no tiene un producto físico vinculado. Configuralo en Renting → Configuración.');
+        return $rows[0];
+    }
+    public function setServiceProduct($service,$product) {
+        $this->permission('configurer');
+        return $this->atomic(function () use ($service,$product) {
+            $p=$this->db->prefix();
+            $this->one("SELECT rowid FROM ".$p."product WHERE rowid=".(int)$service." AND entity=".$this->entity." AND fk_product_type=1 FOR UPDATE");
+            $this->one("SELECT rowid FROM ".$p."product WHERE rowid=".(int)$product." AND entity=".$this->entity." AND fk_product_type=0 AND tobatch=2");
+            $active=$this->rows("SELECT cl.fk_product FROM ".$this->table('booking')." b JOIN ".$this->table('contract_link')." cl ON cl.fk_booking=b.rowid WHERE b.entity=".$this->entity." AND b.fk_service=".(int)$service." AND b.status IN ('reserved','active','partial') AND cl.fk_product<>".(int)$product);
+            if($active) throw new RuntimeException('No se puede cambiar el producto de un servicio con rentings comprometidos para otro producto.');
+            $this->query("INSERT INTO ".$this->table('service_product')." (entity,fk_service,fk_product) VALUES (".$this->entity.",".(int)$service.",".(int)$product.") ON DUPLICATE KEY UPDATE fk_product=VALUES(fk_product)");
+        });
+    }
     public function reserveFromContract($soc,$contract,$lineId,$product,array $assets,$note='') {
         $this->permission('creer');
         return $this->atomic(function () use ($soc,$contract,$lineId,$product,$assets,$note) {
@@ -152,6 +183,9 @@ class RrRenting
             $this->one("SELECT rowid FROM ".$this->db->prefix()."contrat WHERE rowid=".(int)$contract." AND entity=".$this->entity." AND fk_soc=".(int)$soc." AND statut=1 FOR UPDATE");
             $line=$this->one("SELECT * FROM ".$this->db->prefix()."contratdet WHERE rowid=".(int)$lineId." AND fk_contrat=".(int)$contract." FOR UPDATE");
             $qty=(float)$line->qty;
+            $this->one("SELECT rowid FROM ".$this->db->prefix()."product WHERE rowid=".(int)$line->fk_product." AND entity=".$this->entity." FOR UPDATE");
+            $requiredProduct=$this->serviceProduct($line->fk_product);
+            if((int)$product!==(int)$requiredProduct->rowid) throw new RuntimeException('El servicio exige equipos de '.$requiredProduct->label.'. No se permiten otros productos.');
             if ($qty<1 || $qty!=floor($qty)) { throw new RuntimeException('La línea del contrato debe indicar una cantidad entera de equipos mayor que cero.'); }
             $start=substr((string)$line->date_ouverture_prevue,0,10); $end=substr((string)$line->date_fin_validite,0,10);
             if (!$start || !$end) { throw new RuntimeException('Completá las fechas previstas de inicio y fin en la línea del contrato.'); }
@@ -174,7 +208,7 @@ class RrRenting
     }
     public function reserve($soc,$contract,$service,$start,$end,array $assets,$note='') {
         $this->permission('creer'); $this->date($start); $this->date($end);
-        if ($end<$start || $start<dol_print_date(dol_now(),'%Y-%m-%d')) { throw new RuntimeException('El periodo debe empezar hoy o después y terminar en esa fecha o posteriormente.'); }
+        if ($end<$start || $start<$this->today()) { throw new RuntimeException('El periodo debe empezar hoy ('.$this->today().') o después y terminar en esa fecha o posteriormente.'); }
         $assets=array_values(array_unique(array_map('intval',$assets))); sort($assets);
         if (!$assets) { throw new RuntimeException('Selecciona al menos un equipo.'); }
         return $this->atomic(function () use ($soc,$contract,$service,$start,$end,$assets,$note) {
@@ -188,7 +222,7 @@ class RrRenting
                 if (!in_array($a->status,array('available','out'),true)) { throw new RuntimeException('Un equipo está en revisión, reparación o venta.'); }
                 $overlap=$this->rows("SELECT l.rowid FROM ".$this->table('line')." l JOIN ".$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=".$id." AND b.entity=".$this->entity." AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL AND b.date_start<=".$this->quote($end)." AND b.date_end>=".$this->quote($start));
                 if ($overlap) { throw new RuntimeException('El equipo '.$a->serial.' ya está reservado en ese periodo.'); }
-                $overdue=$this->rows("SELECT l.rowid FROM ".$this->table('line')." l JOIN ".$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=".$id." AND l.date_out IS NOT NULL AND l.date_return IS NULL AND b.date_end<".$this->quote(dol_print_date(dol_now(),'%Y-%m-%d')));
+                $overdue=$this->rows("SELECT l.rowid FROM ".$this->table('line')." l JOIN ".$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=".$id." AND l.date_out IS NOT NULL AND l.date_return IS NULL AND b.date_end<".$this->quote($this->today()));
                 if ($overdue) { throw new RuntimeException('El equipo '.$a->serial.' tiene una devolución vencida.'); }
             }
             $ref='RT-'.date('Y').'-'.strtoupper(bin2hex(random_bytes(4)));
@@ -202,7 +236,7 @@ class RrRenting
         $this->permission('ausgeben');
         return $this->atomic(function () use ($id) {
             $c=$this->config(true); $b=$this->booking($id,true);
-            $today=dol_print_date(dol_now(),'%Y-%m-%d');
+            $today=$this->today();
             if ($b->status!=='reserved' || $b->date_start>$today || $b->date_end<$today) { throw new RuntimeException('La reserva debe estar vigente para entregar los equipos.'); }
             $this->one("SELECT rowid FROM ".$this->db->prefix()."contrat WHERE rowid=".(int)$b->fk_contract." AND entity=".$this->entity." AND fk_soc=".(int)$b->fk_soc." AND statut=1");
             $lines=$this->rows("SELECT * FROM ".$this->table('line')." WHERE fk_booking=".(int)$id." ORDER BY fk_asset FOR UPDATE");
@@ -297,7 +331,7 @@ class RrRenting
     public function replacementCandidates($id,$lineid) {
         $b=$this->booking($id); $c=$this->config();
         $line=$this->one('SELECT a.fk_product FROM '.$this->table('line').' l JOIN '.$this->table('asset').' a ON a.rowid=l.fk_asset WHERE l.rowid='.(int)$lineid.' AND l.fk_booking='.(int)$id.' AND a.entity='.$this->entity);
-        $today=dol_print_date(dol_now(),'%Y-%m-%d');
+        $today=$this->today();
         return $this->rows('SELECT a.rowid,a.serial AS label FROM '.$this->table('asset').' a WHERE a.entity='.$this->entity.' AND a.fk_product='.(int)$line->fk_product." AND a.status='available' AND a.item_condition IN ('good','worn') AND a.fk_warehouse=".(int)$c->available.
             ' AND NOT EXISTS (SELECT 1 FROM '.$this->table('line').' l JOIN '.$this->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=a.rowid AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL AND ((b.date_start<=".$this->quote($b->date_end).' AND b.date_end>='.$this->quote($today).') OR l.date_out IS NOT NULL)) ORDER BY a.serial');
     }
@@ -306,7 +340,7 @@ class RrRenting
         if(trim($note)==='' || mb_strlen($note)>255) throw new RuntimeException('Indicá la justificación del cambio (máximo 255 caracteres).');
         return $this->atomic(function()use($id,$incidentId,$replacement,$note){
             $c=$this->config(true); $b=$this->booking($id,true);
-            $today=dol_print_date(dol_now(),'%Y-%m-%d');
+            $today=$this->today();
             if(!in_array($b->status,array('active','partial'),true) || $b->date_end<$today) throw new RuntimeException('Solo se sustituye equipo en un renting vigente y entregado.');
             $incident=$this->one('SELECT * FROM '.$this->table('incident').' WHERE rowid='.(int)$incidentId.' AND fk_booking='.(int)$id.' AND entity='.$this->entity.' FOR UPDATE');
             if(!in_array($incident->status,array('open','received'),true)) throw new RuntimeException('La incidencia ya fue atendida.');

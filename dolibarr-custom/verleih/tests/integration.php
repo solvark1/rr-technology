@@ -29,8 +29,13 @@ function productFixture($ref,$type) {
 $db->begin();
 try {
     $rr->setup(); $c=$rr->config();
+    check($rr->today(strtotime('2026-09-29 02:00:00 UTC'))==='2026-09-28','Costa Rica date remains today after UTC midnight');
     $tag='RRTEST-'.bin2hex(random_bytes(4));
     $product=productFixture($tag.'-PC',0); $service=productFixture($tag.'-SERVICE',1);
+    rejected(function()use($rr,$service){$rr->serviceProduct($service);},'unmapped service fails closed');
+    $rr->setServiceProduct($service,$product);
+    check((int)$rr->serviceProduct($service)->rowid===$product,'service requires its configured physical product');
+    $monitor=productFixture($tag.'-MONITOR',0);
     $soc=new Societe($db); $soc->name=$tag; $soc->client=1; $soc->status=1; $soc->code_client='auto';
     check($soc->create($user)>0,'customer fixture created');
     $contract=new Contrat($db); $contract->socid=$soc->id; $contract->date_contrat=dol_now(); $contract->commercial_signature_id=$user->id; $contract->commercial_suivi_id=$user->id;
@@ -47,12 +52,25 @@ try {
     $total=$rr->one("SELECT SUM(reel) qty FROM ".$db->prefix()."product_stock WHERE fk_product=".$product);
     check((float)$total->qty===2.0,'enrollment preserves total stock');
     rejected(function()use($rr,$product,$series){$rr->enroll($product,$series[0]);},'duplicate enrollment rejected');
-    $today=dol_print_date(dol_now(),'%Y-%m-%d'); $end=date('Y-m-d',strtotime($today.' +2 days'));
+    $today=$rr->today(); $end=date('Y-m-d',strtotime($today.' +2 days'));
     $contractLine=$rr->one('SELECT rowid FROM '.$db->prefix().'contratdet WHERE fk_contrat='.(int)$contract->id)->rowid;
     check($contract->updateline($contractLine,'Two serialized units',100,2,0,strtotime($today),strtotime($end),0)>0,'unreserved contractual conditions can be edited');
     rejected(function()use($rr,$soc,$contract,$contractLine,$product,$a){$rr->reserveFromContract($soc->id,$contract->id,$contractLine,$product,array($a));},'contract quantity rejects incomplete selection');
     rejected(function()use($rr,$soc,$contract,$contractLine,$service,$a,$b){$rr->reserveFromContract($soc->id,$contract->id,$contractLine,$service,array($a,$b));},'equipment must be a serialized physical product');
+    try {
+        $rr->reserveFromContract($soc->id,$contract->id,$contractLine,$monitor,array($a,$b));
+        throw new LogicException('Wrong physical product accepted');
+    } catch(RuntimeException $ex) {
+        check(strpos($ex->getMessage(),'El servicio exige equipos de ')===0,'PC service rejects forged monitor selection explicitly');
+    }
     $bound=$rr->reserveFromContract($soc->id,$contract->id,$contractLine,$product,array($a,$b));
+    $idsFor=function($start,$finish)use($rr,$product){return array_map(function($r){return (int)$r->rowid;},$rr->reservationCandidates($product,$start,$finish));};
+    check(!in_array($a,$idsFor($today,$end),true),'picker hides equipment with overlapping commitment');
+    check(!in_array($a,$idsFor($end,$end),true),'picker treats reservation end day as occupied');
+    $after=date('Y-m-d',strtotime($end.' +1 day'));
+    check(in_array($a,$idsFor($after,date('Y-m-d',strtotime($after.' +2 days'))),true),'picker allows a nonoverlapping later period');
+
+    rejected(function()use($rr,$service,$monitor){$rr->setServiceProduct($service,$monitor);},'cannot remap committed PC service to monitor');
     $boundBooking=$rr->booking($bound);
     check($boundBooking->date_start===$today && $boundBooking->date_end===$end,'reservation inherits contractual dates');
     rejected(function()use($rr,$soc,$contract,$contractLine,$product,$a,$b){$rr->reserveFromContract($soc->id,$contract->id,$contractLine,$product,array($a,$b));},'same contractual commitment cannot be reserved twice');

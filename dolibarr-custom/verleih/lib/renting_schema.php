@@ -4,6 +4,7 @@ function rrRentingMigrate($db)
 {
     $p = $db->prefix();
     $tables = array(
+        "rr_renting_service_product" => "entity INT NOT NULL, fk_service INT NOT NULL, fk_product INT NOT NULL, PRIMARY KEY (entity,fk_service)",
         "rr_renting_incident" => "rowid INT AUTO_INCREMENT PRIMARY KEY, entity INT NOT NULL, fk_booking INT NOT NULL, fk_line INT NOT NULL, reason VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'open', fk_new_line INT NULL, resolution VARCHAR(255), fk_user INT NOT NULL, date_creation DATETIME NOT NULL, date_resolution DATETIME NULL, KEY idx_rr_incident_line (fk_line,status)",
         "rr_renting_billing" => "fk_booking INT PRIMARY KEY, fk_template INT NOT NULL, state VARCHAR(20) NOT NULL, reason VARCHAR(255), UNIQUE KEY uk_rr_template (fk_template)",
         "rr_renting_contract_link" => "fk_booking INT PRIMARY KEY, fk_contract_line INT NOT NULL, fk_product INT NOT NULL, qty INT NOT NULL, KEY idx_rr_contract_line (fk_contract_line)",

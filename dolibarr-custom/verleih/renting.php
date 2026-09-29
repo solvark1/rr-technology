@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
             case 'billingpause': (new RrBilling($db,$user,$e))->pause($id,GETPOST('reason','alphanohtml')); break;
             case 'billingresume': (new RrBilling($db,$user,$e))->resume($id,GETPOST('nextdate','alphanohtml'),GETPOSTINT('adjust'),GETPOST('reason','alphanohtml')); break;
             case 'setup': $rr->setup(); break;
+            case 'serviceproduct': $rr->setServiceProduct(GETPOSTINT('service'),GETPOSTINT('product')); break;
             case 'enroll': $rr->enroll(GETPOSTINT('product'),GETPOST('serial','alphanohtml'),GETPOST('note','alphanohtml')); $id=0; break;
             case 'reserve':
                 $ids=GETPOST('assets','array');
@@ -66,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     } catch(Throwable $ex) { setEventMessages($ex->getMessage(),null,'errors'); }
 }
 llxHeader('','Renting');
-print '<link rel="stylesheet" href="'.dol_buildpath('/verleih/css/renting.css',1).'?v=11">';
-print '<script defer src="'.dol_buildpath('/verleih/js/renting.js',1).'?v=5"></script>';
+print '<link rel="stylesheet" href="'.dol_buildpath('/verleih/css/renting.css',1).'?v=12">';
+print '<script defer src="'.dol_buildpath('/verleih/js/renting.js',1).'?v=7"></script>';
 print '<div class="rr-app"><header class="rr-hero"><div><div class="rr-eyebrow">R&R Technology · Gestión de equipos</div><h1>Renting</h1><p>Controlá tus equipos, organizá las entregas y acompañá cada devolución.</p></div><div class="rr-mark" aria-hidden="true"><span class="fa fa-desktop"></span></div></header>';
 print '<nav class="rr-nav" aria-label="Secciones de renting">';
 foreach(array('dashboard'=>'Resumen','assets'=>'Equipos','bookings'=>'Rentings','incidents'=>'Incidencias','repairs'=>'Revisión y reparación','settings'=>'Configuración') as $v=>$label) {
@@ -95,6 +96,13 @@ try {
         }
         print '<h3>Antes del primer renting</h3><ol><li>Crea el cliente en Terceros.</li><li>Crea el producto físico y activa su gestión por número de serie único.</li><li>Recibe cada unidad en RR-VENTA con su número de serie.</li><li>Crea un servicio de renting y un contrato validado para el cliente, incluyendo ese servicio.</li><li>Incorpora los equipos desde la pestaña Equipos y crea la reserva.</li></ol>';
         print '<div class="rr-hint"><strong>Facturación vinculada al renting.</strong> Prepará la programación mensual desde su ficha. Se activa con la entrega y se pausa al devolver equipos. Si la devolución es parcial, revisá la cantidad y reanudá desde el renting. Las plantillas antiguas creadas aparte siguen requiriendo gestión manual.</div>';
+        print '<h3>Producto que corresponde a cada servicio</h3><p>Una unidad del servicio representa una unidad del producto vinculado. La reserva solo permite ese producto.</p>';
+        print '<table class="noborder centpercent"><tr><th>Servicio</th><th>Producto físico</th></tr>';
+        foreach($rr->rows("SELECT s.label service,pr.label product FROM ".$rr->table('service_product')." m JOIN ".$p."product s ON s.rowid=m.fk_service JOIN ".$p."product pr ON pr.rowid=m.fk_product WHERE m.entity=".$e) as $map) print '<tr><td>'.rrh($map->service).'</td><td>'.rrh($map->product).'</td></tr>';
+        print '</table>';
+        rrf('serviceproduct','settings');
+        print '<p><label>Servicio '; rrs('service',$rr->rows("SELECT rowid,CONCAT(ref,' — ',label) label FROM ".$p."product WHERE entity=".$e." AND fk_product_type=1 AND tosell=1")); print '</label></p>';
+        print '<p><label>Producto físico '; rrs('product',$rr->rows("SELECT rowid,CONCAT(ref,' — ',label) label FROM ".$p."product WHERE entity=".$e." AND fk_product_type=0 AND tobatch=2")); print '</label></p>'; rrb('Guardar relación');
     } elseif ($view==='incidents') {
         require __DIR__.'/lib/incident_search_view.php';
     } elseif ($view==='repairs') {
@@ -113,6 +121,7 @@ try {
                 print '<p>Si vuelve a venta, informa al comprador de su uso previo. No se permite trasladar equipos con reservas pendientes.</p>';
                 rrb('Registrar revisión');
             }
+            require __DIR__.'/lib/asset_schedule_view.php';
             print '<h3>Historial</h3><table class="noborder centpercent"><tr class="liste_titre"><th>Fecha</th><th>Evento</th><th>Renting</th><th>Observación</th></tr>';
             $events=$rr->rows("SELECT ev.*,b.ref FROM ".$rr->table('event')." ev LEFT JOIN ".$rr->table('booking')." b ON b.rowid=ev.fk_booking WHERE ev.entity=".$e." AND ev.fk_asset=".(int)$id." ORDER BY ev.rowid DESC LIMIT 100");
             $names=array('enroll'=>'Incorporación','checkout'=>'Entrega','return'=>'Devolución','return_all'=>'Devolución total','inspection'=>'Revisión','incident'=>'Falla reportada','incident_receive'=>'Recepción por incidencia','incident_finish'=>'Fin de entrega pendiente','replace_out'=>'Recibido por sustitución','replace_in'=>'Entregado como reemplazo');
@@ -136,9 +145,21 @@ try {
             foreach($rr->rows('SELECT rowid,label FROM '.$p.'categorie WHERE entity='.$e.' AND type=0 ORDER BY label') as $cat) {
                 print '<option value="'.(int)$cat->rowid.'"'.($category===(int)$cat->rowid?' selected':'').'>'.rrh($cat->label).'</option>';
             }
-            print '</select></label><button type="submit" class="button">Filtrar flota</button><a href="?view=assets">Limpiar filtro</a></form><p>Se muestran hasta 500 unidades de la categoría elegida, incluidas las retiradas a venta para conservar su historial.</p><table class="noborder centpercent"><tr class="liste_titre"><th>Producto</th><th>Serie</th><th>Estado</th><th>Condición</th></tr>';
+            print '</select></label><button type="submit" class="button">Filtrar flota</button><a href="?view=assets">Limpiar filtro</a></form><p>Se muestran hasta 500 unidades de la categoría elegida, incluidas las retiradas a venta para conservar su historial.</p><table class="noborder centpercent"><tr class="liste_titre"><th>Producto</th><th>Serie</th><th>Estado</th><th>Condición</th><th>Compromisos de calendario</th></tr>';
             $assets=$rr->fleet($category);
-            foreach($assets as $a) { print '<tr class="oddeven"><td>'.rrphoto($a->fk_product).rrh($a->label).'</td><td><a href="?view=assets&id='.(int)$a->rowid.'">'.rrh($a->serial).'</a></td><td>'.rrh(rrstate($a->status)).'</td><td>'.rrh(rrstate($a->item_condition)).'</td></tr>'; } print '</table>';
+            $commitments=array();
+            foreach($rr->assetBookings(array_map(function($asset){return (int)$asset->rowid;},$assets)) as $entry) $commitments[$entry->fk_asset][]=$entry;
+            foreach($assets as $a) {
+                $booked=$commitments[$a->rowid] ?? array();
+                $calendar='Sin compromisos pendientes';
+                if($booked) {
+                    $next=$booked[0];
+                    $label=$next->date_end<$rr->today()?'Compromiso vencido · revisar':($next->date_start>$rr->today()?'Reserva futura':'Compromiso actual');
+                    $calendar='<strong>'.rrh($label).'</strong><br>'.rrh($next->date_start.' → '.$next->date_end);
+                    if(count($booked)>1) $calendar.='<br>'.count($booked).' compromisos pendientes';
+                }
+                print '<tr class="oddeven"><td>'.rrphoto($a->fk_product).rrh($a->label).'</td><td><a href="?view=assets&id='.(int)$a->rowid.'">'.rrh($a->serial).'</a></td><td>'.rrh(rrstate($a->status)).'</td><td>'.rrh(rrstate($a->item_condition)).'</td><td>'.$calendar.'<br><a href="?view=assets&id='.(int)$a->rowid.'">Ver reservas y contratos →</a></td></tr>';
+            } print '</table><p>Una reserva futura no bloquea los periodos anteriores. La disponibilidad se comprueba con las fechas de cada renting.</p>';
         }
     } elseif ($view==='bookings') {
         if ($id) {
@@ -186,19 +207,21 @@ try {
                 rrf('reserve','bookings');
                 print '<p><label>Cliente '; rrs('soc',$rr->rows("SELECT rowid,nom label FROM ".$p."societe WHERE entity=".$e." AND client IN (1,3) AND status=1 ORDER BY nom LIMIT 500")); print '</label></p>';
                 print '<p><label>Contrato validado <select required name="contract"><option value="">Seleccioná un contrato</option>';
-                foreach($rr->rows("SELECT c.rowid,c.ref,c.fk_soc,s.nom FROM ".$p."contrat c JOIN ".$p."societe s ON s.rowid=c.fk_soc WHERE c.entity=".$e." AND c.statut=1 ORDER BY c.rowid DESC LIMIT 500") as $contract) {
-                    print '<option value="'.(int)$contract->rowid.'" data-soc="'.(int)$contract->fk_soc.'">'.rrh($contract->ref.' — '.$contract->nom).'</option>';
+                foreach($rr->rows("SELECT c.rowid,c.ref,c.fk_soc,c.statut,s.nom FROM ".$p."contrat c JOIN ".$p."societe s ON s.rowid=c.fk_soc WHERE c.entity=".$e." AND c.statut IN (0,1) ORDER BY c.rowid DESC LIMIT 500") as $contract) {
+                    print '<option value="'.(int)$contract->rowid.'" data-soc="'.(int)$contract->fk_soc.'" data-draft="'.((int)$contract->statut===0?'yes':'no').'">'.rrh($contract->ref.' — '.$contract->nom.((int)$contract->statut===0?' · Borrador: pendiente de validar':'')).'</option>';
                 }
                 print '</select></label></p><p><label>Línea de servicio <select required name="contractline"><option value="">Seleccioná una línea</option>';
-                foreach($rr->rows("SELECT d.rowid,d.fk_contrat,d.qty,d.date_ouverture_prevue,d.date_fin_validite,pr.label,c.ref FROM ".$p."contratdet d JOIN ".$p."contrat c ON c.rowid=d.fk_contrat JOIN ".$p."product pr ON pr.rowid=d.fk_product WHERE c.entity=".$e." AND c.statut=1 AND pr.entity=".$e." AND pr.fk_product_type=1 AND pr.tosell=1 ORDER BY d.rowid") as $cl) {
-                    print '<option value="'.(int)$cl->rowid.'" data-contract="'.(int)$cl->fk_contrat.'" data-qty="'.rrh($cl->qty).'" data-start="'.rrh(substr((string)$cl->date_ouverture_prevue,0,10)).'" data-end="'.rrh(substr((string)$cl->date_fin_validite,0,10)).'">'.rrh($cl->label.' · '.$cl->qty.' unidades · '.$cl->ref.' · línea '.$cl->rowid).'</option>';
+                foreach($rr->rows("SELECT d.rowid,d.fk_contrat,d.qty,d.date_ouverture_prevue,d.date_fin_validite,pr.label,c.ref,m.fk_product equipment FROM ".$p."contratdet d JOIN ".$p."contrat c ON c.rowid=d.fk_contrat JOIN ".$p."product pr ON pr.rowid=d.fk_product LEFT JOIN ".$rr->table('service_product')." m ON m.fk_service=d.fk_product AND m.entity=c.entity WHERE c.entity=".$e." AND c.statut=1 AND pr.entity=".$e." AND pr.fk_product_type=1 AND pr.tosell=1 ORDER BY d.rowid") as $cl) {
+                    $eligible=$rr->reservationCandidates($cl->equipment,substr((string)$cl->date_ouverture_prevue,0,10),substr((string)$cl->date_fin_validite,0,10));
+                    $eligibleIds=implode(',',array_map(function($asset){return (int)$asset->rowid;},$eligible));
+                    print '<option data-available="'.rrh($eligibleIds).'" value="'.(int)$cl->rowid.'" data-product="'.(int)$cl->equipment.'" data-contract="'.(int)$cl->fk_contrat.'" data-qty="'.rrh($cl->qty).'" data-start="'.rrh(substr((string)$cl->date_ouverture_prevue,0,10)).'" data-end="'.rrh(substr((string)$cl->date_fin_validite,0,10)).'">'.rrh($cl->label.' · '.$cl->qty.' unidades · '.$cl->ref.' · línea '.$cl->rowid).'</option>';
                 }
-                print '</select></label></p><p class="rr-hint" id="rr-contract-summary" aria-live="polite">Seleccioná una línea para ver el periodo y la cantidad contratada.</p>';
+                print '</select></label></p><p class="rr-hint" id="rr-contract-summary" data-today="'.rrh($rr->today()).'" aria-live="polite">Seleccioná una línea para ver el periodo y la cantidad contratada.</p><p><a id="rr-contract-edit" hidden href="'.DOL_URL_ROOT.'/contrat/card.php?id=">Abrir contrato para revisar fechas o validarlo →</a></p>';
                 print '<p><label>Producto físico que cumple el servicio '; rrs('equipmentproduct',$rr->rows("SELECT rowid,CONCAT(ref,' — ',label) label FROM ".$p."product WHERE entity=".$e." AND fk_product_type=0 AND tobatch=2 ORDER BY ref")); print '</label></p><p>Una unidad del servicio equivale a una unidad física. Usá líneas separadas para productos diferentes (PCs, monitores, tarjetas, etc.).</p>';
-                print '<p>Selecciona equipos; al guardar se comprueba la disponibilidad para el periodo completo. Las fechas de inicio y fin se incluyen en la reserva.</p><div class="div-table-responsive"><table class="noborder centpercent"><tr class="liste_titre"><th>Elegir</th><th>Producto</th><th>Serie</th><th>Situación actual</th></tr>';
+                print '<p>Solo se muestran equipos sin compromisos que se crucen con el periodo completo del contrato. Al guardar se vuelve a comprobar la disponibilidad. Las fechas de inicio y fin se incluyen en la reserva.</p><div class="div-table-responsive"><table class="noborder centpercent"><tr class="liste_titre"><th>Elegir</th><th>Producto</th><th>Serie</th><th>Situación actual</th></tr>';
                 foreach($rr->rows("SELECT a.*,p.label FROM ".$rr->table('asset')." a JOIN ".$p."product p ON p.rowid=a.fk_product WHERE a.entity=".$e." AND a.status IN ('available','out') ORDER BY p.label,a.serial LIMIT 500") as $a) {
                     $busy=$rr->rows("SELECT b.date_start,b.date_end FROM ".$rr->table('line')." l JOIN ".$rr->table('booking')." b ON b.rowid=l.fk_booking WHERE l.fk_asset=".(int)$a->rowid." AND b.entity=".$e." AND b.status IN ('reserved','active','partial') AND l.date_return IS NULL");
-                    print '<tr class="oddeven" data-product="'.(int)$a->fk_product.'" data-state="'.rrh($a->status).'" data-busy="'.rrh(json_encode($busy)).'"><td><input type="checkbox" name="assets[]" value="'.(int)$a->rowid.'"></td><td>'.rrh($a->label).'</td><td>'.rrh($a->serial).'</td><td>'.rrh(rrstate($a->status)).'</td></tr>';
+                    print '<tr hidden class="oddeven" data-product="'.(int)$a->fk_product.'" data-state="'.rrh($a->status).'" data-busy="'.rrh(json_encode($busy)).'"><td><input disabled type="checkbox" name="assets[]" value="'.(int)$a->rowid.'"></td><td>'.rrh($a->label).'</td><td>'.rrh($a->serial).'</td><td>'.rrh(rrstate($a->status)).'</td></tr>';
                 }
                 print '</table></div><p><label>Observación <input name="note" maxlength="255" class="minwidth300"></label></p>'; rrb('Crear reserva');
                 print '</details>';
@@ -219,7 +242,7 @@ try {
         print '<p class="rr-hint">Estar en almacén no garantiza disponibilidad para cualquier fecha. Al crear una reserva, comprobamos el periodo completo de cada equipo.</p>';
         print '<h2>Próximas entregas y devoluciones pendientes</h2><table class="noborder centpercent"><tr class="liste_titre"><th>Renting</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Situación</th></tr>';
         foreach($rr->rows("SELECT b.*,s.nom FROM ".$rr->table('booking')." b JOIN ".$p."societe s ON s.rowid=b.fk_soc WHERE b.entity=".$e." AND b.status IN ('reserved','active','partial') ORDER BY b.date_end LIMIT 100") as $b) {
-            $late=$b->date_end<dol_print_date(dol_now(),'%Y-%m-%d');
+            $late=$b->date_end<$rr->today();
             print '<tr class="oddeven"><td><a href="?view=bookings&id='.(int)$b->rowid.'">'.rrh($b->ref).'</a></td><td>'.rrh($b->nom).'</td><td>'.rrh($b->date_start).'</td><td>'.rrh($b->date_end).'</td><td>'.rrh($late?'Vencido — revisar':rrstate($b->status)).'</td></tr>';
         } print '</table>';
         print '<p><a class="butAction" href="?view=assets">Incorporar equipos</a> <a class="butAction" href="?view=bookings">Gestionar renting</a></p>';

@@ -66,7 +66,7 @@ class RrBilling extends RrRenting {
         return $this->atomic(function()use($id,$date,$adjust,$reason){
             $b=$this->booking($id,true);
             if(!in_array($b->status,array('active','partial'),true)) throw new RuntimeException('Solo se reanuda un renting con unidades entregadas.');
-            if($date<dol_print_date(dol_now(),'%Y-%m-%d') || $date>=$b->date_end) throw new RuntimeException('La próxima fecha debe ser hoy o posterior, y anterior al fin del contrato.');
+            if($date<$this->today() || $date>=$b->date_end) throw new RuntimeException('La próxima fecha debe ser hoy o posterior, y anterior al fin del contrato.');
             $map=$this->one('SELECT * FROM '.$this->table('billing').' WHERE fk_booking='.(int)$id);
             if($map->state!=='paused') throw new RuntimeException('La programación debe estar pausada.');
             $rec=new FactureRec($this->db);

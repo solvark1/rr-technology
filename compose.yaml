@@ -64,6 +64,7 @@ services:
           runuser -u www-data -- php /var/www/scripts/rr-start/42-seed-product-images.php || exit 1
           php /var/www/scripts/rr-start/45-seed-bank-demo.php || exit 1
           php /var/www/scripts/rr-start/47-seed-analytics.php || exit 1
+          php /var/www/scripts/rr-start/48-link-renting-products.php || exit 1
 
           if [ "$$RR_RECURRING_BILLING" = "1" ]; then
             (
