@@ -5,6 +5,9 @@ services:
     container_name: rr-mariadb
     restart: unless-stopped
 
+    ports:
+      - "3306:3306"
+
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: dolidb
@@ -16,6 +19,9 @@ services:
 
 
   dolibarr:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: dolibarr/dolibarr:24.0.0
     container_name: rr-dolibarr
     restart: unless-stopped

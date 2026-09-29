@@ -1,0 +1,42 @@
+# Translation file
+
+#
+# Generic
+#
+
+# Module label 'ModuleReportesName'
+ModuleReportesName = Reportes
+# Module description 'ModuleReportesDesc'
+ModuleReportesDesc = Reportes description
+
+#
+# Admin page
+#
+ReportesSetup = Reportes setup
+Settings = Settings
+ReportesSetupPage = Reportes setup page
+NewSection=New section
+REPORTES_MYPARAM1 = My param 1
+REPORTES_MYPARAM1Tooltip = My param 1 tooltip
+REPORTES_MYPARAM2=My param 2
+REPORTES_MYPARAM2Tooltip=My param 2 tooltip
+
+
+#
+# About page
+#
+About = About
+ReportesAbout = About Reportes
+ReportesAboutPage = Reportes about page
+
+#
+# Sample page
+#
+ReportesArea = Home Reportes
+MyPageName = My page name
+
+#
+# Sample widget
+#
+MyWidget = My widget
+MyWidgetDescription = My widget description
