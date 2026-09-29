@@ -14,8 +14,3 @@ RUN pip3 install --break-system-packages --no-cache-dir \
     matplotlib \
     pymongo \
     mysql-connector-python
-
-# Habilitar shell_exec (y solo esa función) sin tocar el php.ini principal,
-# para que sobreviva a la regeneración de config que hace docker-run.sh
-RUN echo "disable_functions = exec,passthru,proc_open,proc_close,popen,system" \
-    > /usr/local/etc/php/conf.d/zz-enable-shell-exec.ini

@@ -1,0 +1,4 @@
+report-status.json
+report-status.tmp
+.refresh-request
+*.tmp.png

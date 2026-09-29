@@ -1,3 +1,9 @@
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rr_chart_style import save_chart
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -6,11 +12,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 conexion = mysql.connector.connect(
-    host="mariadb",
+    host=os.getenv("DOLI_DB_HOST", "mariadb"),
     port=3306,
-    user="dolibarr",
-    password="123",
-    database="dolidb"
+    user=os.getenv("DOLI_DB_USER", "dolibarr"),
+    password=os.environ["DOLI_DB_PASSWORD"],
+    database=os.getenv("DOLI_DB_NAME", "dolidb")
 )
 
 consulta = """
@@ -49,6 +55,6 @@ plt.ylabel("Equipo")
 plt.gca().invert_yaxis()
 
 plt.tight_layout()
-plt.savefig("/var/www/html/custom/reportes/python/graficos/top_alquilados.png", bbox_inches="tight")
+save_chart("/var/www/html/custom/reportes/python/graficos/top_alquilados.png", bbox_inches="tight")
 
 conexion.close()
