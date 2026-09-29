@@ -1,3 +1,9 @@
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rr_chart_style import save_chart
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -7,11 +13,11 @@ import pandas as pd
 
 
 conexion = mysql.connector.connect(
-    host="mariadb",
+    host=os.getenv("DOLI_DB_HOST", "mariadb"),
     port=3306,
-    user="dolibarr",
-    password="123",
-    database="dolidb",
+    user=os.getenv("DOLI_DB_USER", "dolibarr"),
+    password=os.environ["DOLI_DB_PASSWORD"],
+    database=os.getenv("DOLI_DB_NAME", "dolidb"),
 )
 
 consulta = """
@@ -46,26 +52,26 @@ resultado = resultado.rename(
 
 # 2. Definir mapa de colores
 colores_status = {
-    "Disponible": "#2ecc71",
-    "Entregado": "#3498db",
-    "Reparación": "#e74c3c",
-    "Revisión": "#f39c12",
-    "Destinado a venta": "#7f7e80",
+    "Disponible": "#65dbc3",
+    "Entregado": "#70b6ed",
+    "Reparación": "#f18b99",
+    "Revisión": "#efbb69",
+    "Destinado a venta": "#91a6b9",
 }
 
 # 3. Crear figura y graficar UNA SOLA VEZ
 fig, ax = plt.subplots(figsize=(12, 6))
-resultado.plot(kind="bar", stacked=True, ax=ax, color=colores_status)
+resultado.plot(kind="barh", stacked=True, ax=ax, color=colores_status)
 
 plt.title("Capacidad de la flota")
-plt.xlabel("Producto")
-plt.ylabel("Cantidad de equipos")
+plt.xlabel("Cantidad de equipos")
+plt.ylabel("")
 
-plt.xticks(rotation=45, ha="right")
-plt.yticks(range(0, int(resultado.sum(axis=1).max()) + 1, 1))
+ax.invert_yaxis()
+
 
 plt.legend(title="Estado", bbox_to_anchor=(1.02, 1), loc="upper left")
 
-plt.savefig("/var/www/html/custom/reportes/python/graficos/capacidad_flota.png", bbox_inches="tight")
+save_chart("/var/www/html/custom/reportes/python/graficos/capacidad_flota.png", bbox_inches="tight")
 
 conexion.close()

@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: dolibarr/dolibarr:24.0.0
+    image: rr-technology/dolibarr:24.0.0
     container_name: rr-dolibarr
     restart: unless-stopped
 
@@ -47,7 +47,7 @@ services:
       DOLI_COMPANY_NAME: "R&R Technology Costa Rica"
       DOLI_COMPANY_COUNTRYCODE: "CR"
 
-      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website,Categorie,Marketplace,Verleih"
+      DOLI_ENABLE_MODULES: "Societe,Fournisseur,Product,Service,Stock,Bom,Mrp,Propale,Commande,Facture,Expedition,Reception,Agenda,Mailing,Accounting,Banque,HRM,Holiday,ExpenseReport,Website,Categorie,Marketplace,Verleih,Reportes"
 
       PHP_INI_UPLOAD_MAX_FILESIZE: 20M
       PHP_INI_POST_MAX_SIZE: 25M
@@ -71,6 +71,8 @@ services:
           php /var/www/scripts/rr-start/45-seed-bank-demo.php || exit 1
           php /var/www/scripts/rr-start/47-seed-analytics.php || exit 1
           php /var/www/scripts/rr-start/48-link-renting-products.php || exit 1
+          php /var/www/scripts/rr-start/49-enable-reportes.php || exit 1
+          runuser -u www-data -- python3 /var/www/html/custom/reportes/python/report_worker.py &
 
           if [ "$$RR_RECURRING_BILLING" = "1" ]; then
             (

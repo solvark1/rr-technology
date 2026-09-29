@@ -1,3 +1,9 @@
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from rr_chart_style import save_chart
+
 import warnings
 warnings.filterwarnings("ignore")
 import mysql.connector
@@ -6,10 +12,10 @@ import matplotlib.pyplot as plt
 
 # Conexión a MariaDB
 conexion = mysql.connector.connect(
-    host="mariaDB",
-    user="dolibarr",
-    password="123",
-    database="dolidb"
+    host=os.getenv("DOLI_DB_HOST", "mariadb"),
+    user=os.getenv("DOLI_DB_USER", "dolibarr"),
+    password=os.environ["DOLI_DB_PASSWORD"],
+    database=os.getenv("DOLI_DB_NAME", "dolidb")
 )
 
 consulta = """
@@ -37,6 +43,6 @@ plt.xlabel("Estado")
 plt.ylabel("Cantidad de incidencias")
 
 plt.tight_layout()
-plt.savefig("/var/www/html/custom/reportes/python/graficos/incidencias_tipo.png", bbox_inches="tight")
+save_chart("/var/www/html/custom/reportes/python/graficos/incidencias_tipo.png", bbox_inches="tight")
 
 conexion.close()

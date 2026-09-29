@@ -1,3 +1,9 @@
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from rr_chart_style import save_chart
+
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,7 +20,7 @@ CLUSTER = "cluster0.6vh1buh.mongodb.net"
 
 uri = f"mongodb+srv://{USUARIO}:{PASSWORD}@{CLUSTER}/?appName=Cluster0"
 
-cliente = MongoClient(uri)
+cliente = MongoClient(os.getenv("RR_MONGO_URI", uri), serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
 
 db = cliente["R&R_Social"]
 coleccion = db["posts"]
@@ -53,7 +59,7 @@ plt.ylabel("Interacciones")
 plt.xticks(rotation=0)
 plt.tight_layout()
 
-plt.savefig(
+save_chart(
     ruta + "interacciones_plataforma.png",
     bbox_inches="tight"
 )
@@ -73,16 +79,16 @@ resultado = (
 
 plt.figure(figsize=(8, 5))
 
-resultado.plot(kind="bar")
+resultado.plot(kind="barh")
 
 plt.title("Interacciones por producto")
-plt.xlabel("Producto")
-plt.ylabel("Interacciones")
-plt.xticks(rotation=45)
+plt.xlabel("Interacciones")
+plt.ylabel("")
+plt.gca().invert_yaxis()
 
 plt.tight_layout()
 
-plt.savefig(
+save_chart(
     ruta + "interacciones_producto.png",
     bbox_inches="tight"
 )
@@ -111,7 +117,7 @@ plt.xticks(rotation=45)
 
 plt.tight_layout()
 
-plt.savefig(
+save_chart(
     ruta + "interacciones_ubicacion.png",
     bbox_inches="tight"
 )
@@ -131,16 +137,17 @@ resultado = pd.crosstab(
 plt.figure(figsize=(14, 7))
 
 ax = resultado.plot(
-    kind="bar",
+    kind="barh",
     stacked=True,
+    color=[{"positivo":"#65dbc3", "neutral":"#91a6b9", "negativo":"#f18b99"}.get(str(c).lower(),"#70b6ed") for c in resultado.columns],
     figsize=(14, 7)
 )
 
-ax.yaxis.set_major_locator(MultipleLocator(50))
+ax.invert_yaxis()
 
 plt.title("Sentimiento por producto", pad=18)
-plt.xlabel("Producto", labelpad=12)
-plt.ylabel("Cantidad de publicaciones", labelpad=12)
+plt.xlabel("Cantidad de publicaciones", labelpad=12)
+plt.ylabel("")
 
 plt.xticks(
     rotation=45,
@@ -149,7 +156,7 @@ plt.xticks(
 
 plt.tight_layout()
 
-plt.savefig(
+save_chart(
     ruta + "sentimiento_producto.png",
     bbox_inches="tight"
 )
@@ -182,7 +189,7 @@ plt.xticks(
 
 plt.tight_layout()
 
-plt.savefig(
+save_chart(
     ruta + "tipo_publicacion_interacciones.png",
     bbox_inches="tight"
 )
