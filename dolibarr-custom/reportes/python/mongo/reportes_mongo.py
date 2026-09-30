@@ -1,4 +1,4 @@
-import os
+
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -7,20 +7,13 @@ from rr_chart_style import save_chart
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 from pymongo import MongoClient
 
-# ============================================================
-# CONEXIÓN A MONGODB
-# ============================================================
-
-USUARIO = "luisballar"
-PASSWORD = "123"
-CLUSTER = "cluster0.6vh1buh.mongodb.net"
-
-uri = f"mongodb+srv://{USUARIO}:{PASSWORD}@{CLUSTER}/?appName=Cluster0"
-
-cliente = MongoClient(os.getenv("RR_MONGO_URI", uri), serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
+cliente = MongoClient(
+    "mongodb://localhost:27017/",
+    serverSelectionTimeoutMS=10000,
+    connectTimeoutMS=10000
+)
 
 db = cliente["R&R_Social"]
 coleccion = db["posts"]
@@ -32,16 +25,8 @@ datos = list(coleccion.find())
 df = pd.json_normalize(datos)
 
 
-# ============================================================
-# RUTAS DE LOS GRÁFICOS
-# ============================================================
-
 ruta = "/var/www/html/custom/reportes/python/graficos/"
 
-
-# ============================================================
-# 1. INTERACCIONES POR PLATAFORMA
-# ============================================================
 
 resultado = (
     df.groupby("plataforma")["metricas.interacciones_totales"]
@@ -65,11 +50,6 @@ save_chart(
 )
 
 plt.close()
-
-
-# ============================================================
-# 2. INTERACCIONES POR PRODUCTO
-# ============================================================
 
 resultado = (
     df.groupby("producto")["metricas.interacciones_totales"]
@@ -95,11 +75,6 @@ save_chart(
 
 plt.close()
 
-
-# ============================================================
-# 3. INTERACCIONES POR UBICACIÓN
-# ============================================================
-
 resultado = (
     df.groupby("ubicacion")["metricas.interacciones_totales"]
     .sum()
@@ -123,11 +98,6 @@ save_chart(
 )
 
 plt.close()
-
-
-# ============================================================
-# 4. SENTIMIENTO POR PRODUCTO
-# ============================================================
 
 resultado = pd.crosstab(
     df["producto"],
@@ -162,11 +132,6 @@ save_chart(
 )
 
 plt.close()
-
-
-# ============================================================
-# 5. INTERACCIONES POR TIPO DE PUBLICACIÓN
-# ============================================================
 
 resultado = (
     df.groupby("tipo_publicacion")["metricas.interacciones_totales"]
